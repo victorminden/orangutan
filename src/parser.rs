@@ -2,6 +2,18 @@ use crate::lexer::Lexer;
 use crate::ast::{Program, Statement, Expression};
 use crate::token::Token;
 
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
+pub enum Precedence {
+    Lowest,
+    Equals,
+    LessGreater,
+    Sum,
+    Product,
+    Prefix,
+    Call,
+    Index,
+}
+
 #[derive(Debug)]
 pub enum ParseError {
     UnexpectedToken,
@@ -10,6 +22,9 @@ pub enum ParseError {
     ExpectedAssign(Token),
     UnknownError,
 }
+
+type PrefixParseFn = fn(&mut Parser) -> Result<Expression, ParseError>;
+type InfixParseFn = fn(&mut Parser, Expression) -> Result<Expression, ParseError>;
 
 pub struct Parser<'a> {
     lexer: Lexer<'a>,
@@ -44,10 +59,7 @@ impl<'a> Parser<'a> {
         match &*self.lexer.peek_token() {
             Token::Let => self.parse_let_statement(),
             Token::Return => self.parse_return_statement(),
-            _ => {
-                self.lexer.next_token();
-                Err(ParseError::UnexpectedToken)
-            },
+            _ => self.parse_expression_statement(),
         }
     }
 
@@ -95,7 +107,25 @@ impl<'a> Parser<'a> {
         return Ok(Statement::Let(name, Expression::Null));
     }
 
-    fn parse_expression(&mut self) -> Result<Expression, ParseError> {
+    // TODO: Determine appropriate parameters to this and infix flavor.
+    fn prefix_parse_fn(&mut self) -> Option<PrefixParseFn> {
+        None
+    }
+
+    fn infix_parse_fn(&mut self) -> Option<InfixParseFn> {
+        None
+    }
+
+    fn parse_expression_statement(&mut self) -> Result<Statement, ParseError> {
+        let expression = self.parse_expression(Precedence::Lowest)?;
+        // Optional semicolon.
+        if *self.lexer.peek_token() == Token::Semicolon {
+            self.lexer.next_token();
+        }
+        Ok(Statement::Expression(expression))
+    }
+
+    fn parse_expression(&mut self, precedence: Precedence) -> Result<Expression, ParseError> {
         Ok(Expression::Null)
     }
 }
@@ -159,6 +189,29 @@ mod tests {
             }
         }
         assert_eq!(count, 3);
+
+        Ok(())
+    }
+
+    #[test]
+    fn identifier_statement_test() -> Result<(), ParseError> {
+        let input = "foobar;";
+        
+        let mut parser = Parser::new(Lexer::new(input));
+        let program = parser.parse_program()?;
+        parser.print_errors();
+        assert_eq!(program.statements.len(), 1);
+       
+        if let Statement::Expression(exp) = &program.statements[0] {
+            if let Expression::Ident(name) = exp {
+                assert_eq!(name, "foobar");
+            } else {
+                assert!(false);
+            }
+        }
+        else {
+            assert!(false);
+        }
 
         Ok(())
     }

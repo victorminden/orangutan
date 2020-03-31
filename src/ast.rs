@@ -10,10 +10,11 @@ pub struct Program {
 pub enum Statement {
     Let(String, Expression),
     Return(Expression),
+    Expression(Expression),
 }
 
 #[derive(Debug)]
 pub enum Expression {
     Null,
-    Identifier(String),
+    Ident(String),
 }
