@@ -1,27 +1,7 @@
 use crate::lexer::Lexer;
 use crate::ast::{Program, Statement, Expression};
 use crate::token::Token;
-
-#[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
-pub enum Precedence {
-    Lowest,
-    Equals,
-    LessGreater,
-    Sum,
-    Product,
-    Prefix,
-    Call,
-    Index,
-}
-
-#[derive(Debug)]
-pub enum ParseError {
-    UnexpectedToken,
-    ExpectedIdent(Token),
-    ExpectedLet(Token),
-    ExpectedAssign(Token),
-    UnknownError,
-}
+use crate::parser::{ParseError, Precedence};
 
 type PrefixParseFn = fn(&mut Parser) -> Result<Expression, ParseError>;
 type InfixParseFn = fn(&mut Parser, Expression) -> Result<Expression, ParseError>;
