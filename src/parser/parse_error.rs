@@ -6,5 +6,7 @@ pub enum ParseError {
     ExpectedIdent(Token),
     ExpectedLet(Token),
     ExpectedAssign(Token),
+    ExpectedInteger(Token),
+    ExpectedPrefix(Token),
     UnknownError,
 }

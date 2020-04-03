@@ -3,9 +3,6 @@ use crate::ast::{Program, Statement, Expression};
 use crate::token::Token;
 use crate::parser::{ParseError, Precedence};
 
-type PrefixParseFn = fn(&mut Parser) -> Result<Expression, ParseError>;
-type InfixParseFn = fn(&mut Parser, Expression) -> Result<Expression, ParseError>;
-
 pub struct Parser<'a> {
     lexer: Lexer<'a>,
     errors: Vec<ParseError>,
@@ -87,15 +84,6 @@ impl<'a> Parser<'a> {
         return Ok(Statement::Let(name, Expression::Null));
     }
 
-    // TODO: Determine appropriate parameters to this and infix flavor.
-    fn prefix_parse_fn(&mut self) -> Option<PrefixParseFn> {
-        None
-    }
-
-    fn infix_parse_fn(&mut self) -> Option<InfixParseFn> {
-        None
-    }
-
     fn parse_expression_statement(&mut self) -> Result<Statement, ParseError> {
         let expression = self.parse_expression(Precedence::Lowest)?;
         // Optional semicolon.
@@ -106,6 +94,55 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_expression(&mut self, precedence: Precedence) -> Result<Expression, ParseError> {
-        Ok(Expression::Null)
+        // Determine whether we should have a prefix_parse_fn return the expression.
+        // This seems like a good idea to avoid tossing around self.
+        // let left_exp = self.prefix_parse_fn()?;
+
+        // Match left/primary expression.
+        let left = match *self.lexer.peek_token() {
+            Token::Ident(_) => self.parse_identifier()?, 
+            Token::Integer(_) => self.parse_integer_literal()?,
+            Token::Bang | Token::Minus => self.parse_prefix_expression()?,
+            Token::True|
+            Token::False|
+            Token::Bang|
+            Token::Minus|
+            Token::LParen|
+            Token::RParen|
+            Token::LBrace|
+            Token::RBrace|
+            Token::If|
+            Token::Function => self.parse_identifier()?,
+            _ => { 
+                self.lexer.next_token();
+                return Err(ParseError::UnexpectedToken); 
+            },
+        };
+        Ok(left)
+    }
+
+    fn parse_identifier(&mut self) -> Result<Expression, ParseError> {
+        match self.lexer.next_token() {
+            Token::Ident(name) => Ok(Expression::Ident(name)),
+            other => Err(ParseError::ExpectedIdent(other)),
+        }
+    }
+
+    fn parse_integer_literal(&mut self) -> Result<Expression, ParseError> {
+        match self.lexer.next_token() {
+            Token::Integer(int) => Ok(Expression::IntegerLiteral(int)),
+            other => Err(ParseError::ExpectedInteger(other)),
+        }
+    }
+
+    fn parse_prefix_expression(&mut self) -> Result<Expression, ParseError> {
+        match self.lexer.next_token() {
+            prefix 
+            if (prefix == Token::Minus) | (prefix ==Token::Bang) => {
+                let expr = self.parse_expression(Precedence::Prefix)?;
+                Ok(Expression::Prefix(prefix, Box::new(expr)))
+            },
+            other => Err(ParseError::ExpectedPrefix(other)),
+        }
     }
 }

@@ -1,5 +1,4 @@
-//use std::fmt;
-//use crate::token::Token;
+use crate::token::Token;
 
 #[derive(Debug)]
 pub struct Program {
@@ -17,4 +16,7 @@ pub enum Statement {
 pub enum Expression {
     Null,
     Ident(String),
+    IntegerLiteral(i32),
+    Prefix(Token, Box<Expression>),
+    Infix(Box<Expression>, Token, Box<Expression>),
 }
