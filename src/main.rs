@@ -1,6 +1,6 @@
-extern crate monkey_interpreter;
+extern crate orangutan;
 
 // TODO: Determine an appropriate error type to return.
 fn main() -> Result<(), std::io::Error> {
-    monkey_interpreter::repl::start()
+    orangutan::repl::start()
 }

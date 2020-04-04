@@ -1,5 +1,5 @@
 [package]
-name = "monkey_interpreter"
+name = "orangutan"
 version = "0.1.0"
 authors = ["victorminden"]
 edition = "2018"
