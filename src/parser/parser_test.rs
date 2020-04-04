@@ -214,8 +214,8 @@ fn operator_precedence_test() -> Result<(), ParseError> {
         "((a * b) / c);",
         "(a + (b / c));",
         "(((a + (b * c)) + (d / e)) - f);",
-        "((3 < 5) == false)",
-        "((3 < 5) == true)",
+        "((3 < 5) == false);",
+        "((3 < 5) == true);",
     ];
 
     let mut parser = Parser::new(Lexer::new(input));
