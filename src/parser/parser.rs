@@ -120,7 +120,7 @@ impl<'a> Parser<'a> {
             Token::LBrace |
             Token::RBrace |
             Token::If |
-            Token::Function => self.parse_identifier()?,
+            Token::Function |
             _ => { 
                 let other = self.lexer.next_token();
                 return Err(ParseError::UnexpectedToken(other)); 
