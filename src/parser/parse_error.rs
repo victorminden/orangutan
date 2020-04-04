@@ -26,7 +26,8 @@ impl fmt::Display for ParseError {
             ParseError::ExpectedInteger(token) => expected_x_got_y(f, "integer", token),
             ParseError::ExpectedBoolean(token) => expected_x_got_y(f, "boolean", token),
             ParseError::ExpectedPrefix(token) => expected_x_got_y(f, "prefix", token),
-            UnknownError => write!(f, "ParseError: UnknownError!"),
+            ParseError::UnknownError => write!(f, "ParseError: UnknownError!"),
+            ParseError::UnexpectedToken => write!(f, "ParseError: UnexpectedToken!"),
         }
     }
 }

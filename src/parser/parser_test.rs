@@ -203,6 +203,7 @@ fn operator_precedence_test() -> Result<(), ParseError> {
     a+b*c+d/e-f
     3 < 5 == false
     3 < 5 == true
+    !true != false
     ";
     
     let expected = vec![
@@ -216,6 +217,7 @@ fn operator_precedence_test() -> Result<(), ParseError> {
         "(((a + (b * c)) + (d / e)) - f);",
         "((3 < 5) == false);",
         "((3 < 5) == true);",
+        "((!true) != false);",
     ];
 
     let mut parser = Parser::new(Lexer::new(input));
