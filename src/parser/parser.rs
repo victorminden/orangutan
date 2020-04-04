@@ -93,15 +93,22 @@ impl<'a> Parser<'a> {
         Ok(Statement::Expression(expression))
     }
 
+    fn parse_boolean_literal(&mut self) -> Result<Expression, ParseError> {
+        match self.lexer.next_token() {
+            Token::True => Ok(Expression::BooleanLiteral(true)),
+            Token::False => Ok(Expression::BooleanLiteral(false)),
+            other => Err(ParseError::ExpectedBoolean(other)),
+        }
+    }
+
     fn parse_expression(&mut self, precedence: Precedence) -> Result<Expression, ParseError> {
         // Match left/primary expression.
         let mut expr = match *self.lexer.peek_token() {
             Token::Ident(_) => self.parse_identifier()?, 
             Token::Integer(_) => self.parse_integer_literal()?,
             Token::Bang | Token::Minus => self.parse_prefix_expression()?,
+            Token::True | Token::False => self.parse_boolean_literal()?,
             // TODO: Treat the following tokens explicitly.
-            Token::True |
-            Token::False |
             Token::LParen |
             Token::RParen |
             Token::LBrace |
@@ -114,7 +121,6 @@ impl<'a> Parser<'a> {
             },
         };
         // Repeatedly look for infix tokens.
-        // TODO: Finish additional tests.
         while *self.lexer.peek_token() != Token::Semicolon &&
             token_precedence(&*self.lexer.peek_token()) > precedence {
                 expr = match *self.lexer.peek_token() {

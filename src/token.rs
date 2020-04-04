@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Debug, PartialEq)]
 pub enum Token {
     Null,
@@ -45,5 +47,25 @@ pub fn lookup_ident(ident: String) -> Token {
         "else" => Token::Else,
         "return" => Token::Return,
         _ => Token::Ident(ident)
+    }
+}
+
+impl fmt::Display for Token {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Token::Ident(ident) => write!(f, "{}", ident),
+            Token::Integer(i) => write!(f, "{}", i),
+            Token::Assign => write!(f, "="),
+            Token::Plus => write!(f, "+"),
+            Token::Minus => write!(f, "-"),
+            Token::Equal => write!(f, "=="),
+            Token::NotEqual => write!(f, "!="),
+            Token::Asterisk => write!(f, "*"),
+            Token::Slash => write!(f, "/"),
+            Token::Bang =>write!(f, "!"),
+            Token::LessThan => write!(f, "<"),
+            Token::GreaterThan => write!(f, ">"),
+            other => write!(f, "{:?}", other),
+        }
     }
 }
