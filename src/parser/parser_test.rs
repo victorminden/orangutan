@@ -57,6 +57,32 @@ fn return_statement_test() -> Result<(), ParseError> {
 }
 
 #[test]
+fn let_and_return_statements_with_expressions_test() -> Result<(), ParseError> {
+    let input = "
+    let a = b + (c - d) / e;
+    return a / b;
+    ";
+    
+    let expected = vec![
+        "let a = (b + ((c - d) / e));",
+        "return (a / b);",
+    ];
+
+    let mut parser = Parser::new(Lexer::new(input));
+    let program = parser.parse_program()?;
+    parser.print_errors();
+    assert_eq!(program.statements.len(), expected.len());
+
+    for (expected, statement) in 
+    expected.iter().zip(program.statements.iter()) {
+        assert_eq!(&statement.to_string(), expected);
+    }
+
+    Ok(())
+}
+
+
+#[test]
 fn identifier_statement_test() -> Result<(), ParseError> {
     let input = "foobar;";
     

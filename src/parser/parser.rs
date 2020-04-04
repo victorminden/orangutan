@@ -59,11 +59,10 @@ impl<'a> Parser<'a> {
     fn parse_return_statement(&mut self) -> Result<Statement, ParseError> {
         // Advance past the "Return".
         self.expect_peek(Token::Return)?;
-        // TODO: Implement expression parsing.
-        while self.lexer.next_token() != Token::Semicolon {
-            continue;
-        }
-        return Ok(Statement::Return(Expression::Null));
+        let expr = self.parse_expression(Precedence::Lowest)?;
+        // Advance past the required semicolon.
+        self.expect_peek(Token::Semicolon)?;
+        return Ok(Statement::Return(expr));
     }
 
     fn parse_let_statement(&mut self) -> Result<Statement, ParseError> {
@@ -78,11 +77,10 @@ impl<'a> Parser<'a> {
         };
         // Advance past the "Assign".
         self.expect_peek(Token::Assign)?;
-        // TODO: Implement expression parsing.
-        while self.lexer.next_token() != Token::Semicolon {
-            continue;
-        }
-        return Ok(Statement::Let(name, Expression::Null));
+        let expr = self.parse_expression(Precedence::Lowest)?;
+        // Advance past the required semicolon.
+        self.expect_peek(Token::Semicolon)?;
+        return Ok(Statement::Let(name, expr));
     }
 
     fn parse_expression_statement(&mut self) -> Result<Statement, ParseError> {
@@ -116,8 +114,8 @@ impl<'a> Parser<'a> {
             Token::Integer(_) => self.parse_integer_literal()?,
             Token::Bang | Token::Minus => self.parse_prefix_expression()?,
             Token::True | Token::False => self.parse_boolean_literal()?,
-            // TODO: Treat the following tokens explicitly.
             Token::LParen => self.parse_grouped_expression()?,
+            // TODO: Treat the following tokens explicitly.
             Token::RParen |
             Token::LBrace |
             Token::RBrace |
