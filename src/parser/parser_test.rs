@@ -1,6 +1,6 @@
 use super::*;
 use crate::lexer::Lexer;
-use crate::ast::{Program, Statement, Expression};
+use crate::ast::{Statement, Expression};
 use crate::token::Token;
 
 #[test]
@@ -40,18 +40,12 @@ fn return_statement_test() -> Result<(), ParseError> {
     return 10;
     return 9932;
     ";
-
-    let tests = vec![
-        5,
-        10,
-        9932,
-    ];
     
     let mut parser = Parser::new(Lexer::new(input));
     let program = parser.parse_program()?;
     parser.print_errors();
     let mut count = 0;
-    for (expected_name, statement) in tests.iter().zip(program.statements.iter()) {
+    for statement in program.statements {
         match statement {
             Statement::Return(_) => { count += 1; },
             _ => panic!(),
@@ -168,8 +162,6 @@ fn infix_statement_test() -> Result<(), ParseError> {
     let mut parser = Parser::new(Lexer::new(input));
     let program = parser.parse_program()?;
     parser.print_errors();
-    // TODO: Remove print.
-    println!("{:?}", program.statements);
     assert_eq!(program.statements.len(), 8);
 
     for ((expected_left, expected_infix, expected_right), statement) in 
@@ -194,6 +186,63 @@ fn infix_statement_test() -> Result<(), ParseError> {
         };
         assert_eq!(right_literal, *expected_right);
     }
+
+    Ok(())
+}
+
+#[test]
+fn operator_precedence_test() -> Result<(), ParseError> {
+    let input = "
+    -a * b; 
+    !-a;
+    a+b+c
+    a+b-c
+    a*b*c
+    a*b/c
+    a+b/c
+    a+b*c+d/e-f";
+    
+    /*let expected = vec![
+        (5, Token::Plus, 7),
+        (5, Token::Minus, 7),
+        (5, Token::Asterisk, 7),
+        (5, Token::Slash, 7),
+        (5, Token::GreaterThan, 7),
+        (5, Token::LessThan, 7),
+        (5, Token::Equal, 7),
+        (5, Token::NotEqual, 7),
+    ];*/
+
+    let mut parser = Parser::new(Lexer::new(input));
+    let program = parser.parse_program()?;
+    parser.print_errors();
+    println!("{:?}", program.statements);
+    panic!();
+    assert_eq!(program.statements.len(), 8);
+    /*
+    for ((expected_left, expected_infix, expected_right), statement) in 
+    expected.iter().zip(program.statements.iter()) {
+        let expression = match statement {
+            Statement::Expression(exp) => exp,
+            _ => panic!(),
+        };
+        let (left, infix, right) = match expression {
+            Expression::Infix(left, infix, right) => (left, infix, right),
+            _ => panic!(),
+        };
+        assert_eq!(infix, expected_infix);
+        let left_literal = match **left {
+            Expression::IntegerLiteral(integer) => integer,
+            _ => panic!(),
+        };
+        assert_eq!(left_literal, *expected_left);
+        let right_literal = match **right {
+            Expression::IntegerLiteral(integer) => integer,
+            _ => panic!(),
+        };
+        assert_eq!(right_literal, *expected_right);
+    }
+    */
 
     Ok(())
 }

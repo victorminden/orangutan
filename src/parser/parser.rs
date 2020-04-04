@@ -1,7 +1,7 @@
 use crate::lexer::Lexer;
 use crate::ast::{Program, Statement, Expression};
 use crate::token::Token;
-use crate::parser::{ParseError, Precedence};
+use crate::parser::{ParseError, Precedence, token_precedence};
 
 pub struct Parser<'a> {
     lexer: Lexer<'a>,
@@ -41,7 +41,7 @@ impl<'a> Parser<'a> {
     }
 
     fn expect_peek(&mut self, expected: Token) -> Result<(), ParseError> {
-        // Hack to check the variant of the enum without the value.
+        // Check the variant of the enum without the value.
         let got = self.lexer.next_token();
         if std::mem::discriminant(&got) == std::mem::discriminant(&expected) {
                return Ok(());
@@ -94,31 +94,42 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_expression(&mut self, precedence: Precedence) -> Result<Expression, ParseError> {
-        // Determine whether we should have a prefix_parse_fn return the expression.
-        // This seems like a good idea to avoid tossing around self.
-        // let left_exp = self.prefix_parse_fn()?;
-
         // Match left/primary expression.
-        let left = match *self.lexer.peek_token() {
+        let mut expr = match *self.lexer.peek_token() {
             Token::Ident(_) => self.parse_identifier()?, 
             Token::Integer(_) => self.parse_integer_literal()?,
             Token::Bang | Token::Minus => self.parse_prefix_expression()?,
-            Token::True|
-            Token::False|
-            Token::Bang|
-            Token::Minus|
-            Token::LParen|
-            Token::RParen|
-            Token::LBrace|
-            Token::RBrace|
-            Token::If|
+            // TODO: Treat the following tokens explicitly.
+            Token::True |
+            Token::False |
+            Token::LParen |
+            Token::RParen |
+            Token::LBrace |
+            Token::RBrace |
+            Token::If |
             Token::Function => self.parse_identifier()?,
             _ => { 
                 self.lexer.next_token();
                 return Err(ParseError::UnexpectedToken); 
             },
         };
-        Ok(left)
+        // Repeatedly look for infix tokens.
+        // TODO: Finish additional tests.
+        while *self.lexer.peek_token() != Token::Semicolon &&
+            token_precedence(&*self.lexer.peek_token()) > precedence {
+                expr = match *self.lexer.peek_token() {
+                    Token::Plus |
+                    Token::Minus |
+                    Token::Asterisk |
+                    Token::Slash |
+                    Token::Equal |
+                    Token::NotEqual |
+                    Token::LessThan |
+                    Token::GreaterThan => self.parse_infix_expression(expr)?,
+                    _ => { return Ok(expr); },
+                };
+        }
+        Ok(expr)
     }
 
     fn parse_identifier(&mut self) -> Result<Expression, ParseError> {
@@ -144,5 +155,12 @@ impl<'a> Parser<'a> {
             },
             other => Err(ParseError::ExpectedPrefix(other)),
         }
+    }
+
+    fn parse_infix_expression(
+        &mut self, left_expr: Expression) -> Result<Expression, ParseError> {
+        let token = self.lexer.next_token();
+        let right_expr = self.parse_expression(token_precedence(&token))?;
+        Ok(Expression::Infix(Box::new(left_expr), token, Box::new(right_expr)))
     }
 }

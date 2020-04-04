@@ -8,12 +8,14 @@ pub enum Precedence {
     Sum,
     Product,
     Prefix,
-    Call,
-    Index,
 }
 
-pub fn precedence(token: Token) -> Precedence {
+pub fn token_precedence(token: &Token) -> Precedence {
     match token {
-        _ => Precedence::Lowest
+        Token::Equal | Token::NotEqual => Precedence::Equals,
+        Token::LessThan | Token::GreaterThan => Precedence::LessGreater,
+        Token::Plus | Token::Minus => Precedence::Sum,
+        Token::Slash | Token::Asterisk => Precedence::Product,
+        _ => Precedence::Lowest,
     }
 }
