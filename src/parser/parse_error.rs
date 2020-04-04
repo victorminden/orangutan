@@ -3,18 +3,19 @@ use crate::token::Token;
 
 #[derive(Debug)]
 pub enum ParseError {
-    UnexpectedToken,
+    UnexpectedToken(Token),
     ExpectedIdent(Token),
     ExpectedLet(Token),
     ExpectedAssign(Token),
     ExpectedInteger(Token),
     ExpectedBoolean(Token),
     ExpectedPrefix(Token),
+    ExpectedRParen(Token),
     UnknownError,
 }
 
 fn expected_x_got_y(f: &mut fmt::Formatter, expected: &str, got: &Token) -> fmt::Result {
-    write!(f, "ParseError: expected {}, got {}!", expected, got)
+    write!(f, "ParseError: expected `{}`, got {}!", expected, got)
 }
 
 impl fmt::Display for ParseError {
@@ -26,8 +27,9 @@ impl fmt::Display for ParseError {
             ParseError::ExpectedInteger(token) => expected_x_got_y(f, "integer", token),
             ParseError::ExpectedBoolean(token) => expected_x_got_y(f, "boolean", token),
             ParseError::ExpectedPrefix(token) => expected_x_got_y(f, "prefix", token),
+            ParseError::ExpectedRParen(token) => expected_x_got_y(f, "(", token),
+            ParseError::UnexpectedToken(token) => write!(f, "ParseError: UnexpectedToken `{}`!", token),
             ParseError::UnknownError => write!(f, "ParseError: UnknownError!"),
-            ParseError::UnexpectedToken => write!(f, "ParseError: UnexpectedToken!"),
         }
     }
 }

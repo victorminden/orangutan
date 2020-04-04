@@ -50,6 +50,7 @@ impl<'a> Parser<'a> {
         match expected {
             Token::Let => Err(ParseError::ExpectedLet(got)),
             Token::Assign => Err(ParseError::ExpectedAssign(got)),
+            Token::RParen => Err(ParseError::ExpectedRParen(got)),
             _ => Err(ParseError::UnknownError),
         }
 
@@ -101,6 +102,13 @@ impl<'a> Parser<'a> {
         }
     }
 
+    fn parse_grouped_expression(&mut self) -> Result<Expression, ParseError> {
+        self.lexer.next_token();
+        let exp = self.parse_expression(Precedence::Lowest)?;
+        self.expect_peek(Token::RParen)?;
+        Ok(exp)
+    }
+
     fn parse_expression(&mut self, precedence: Precedence) -> Result<Expression, ParseError> {
         // Match left/primary expression.
         let mut expr = match *self.lexer.peek_token() {
@@ -109,15 +117,15 @@ impl<'a> Parser<'a> {
             Token::Bang | Token::Minus => self.parse_prefix_expression()?,
             Token::True | Token::False => self.parse_boolean_literal()?,
             // TODO: Treat the following tokens explicitly.
-            Token::LParen |
+            Token::LParen => self.parse_grouped_expression()?,
             Token::RParen |
             Token::LBrace |
             Token::RBrace |
             Token::If |
             Token::Function => self.parse_identifier()?,
             _ => { 
-                self.lexer.next_token();
-                return Err(ParseError::UnexpectedToken); 
+                let other = self.lexer.next_token();
+                return Err(ParseError::UnexpectedToken(other)); 
             },
         };
         // Repeatedly look for infix tokens.
