@@ -1,5 +1,5 @@
 use crate::lexer::Lexer;
-use crate::ast::{Program, Statement, Expression};
+use crate::ast::{Program, Statement, Expression, BlockStatement};
 use crate::token::Token;
 use crate::parser::{ParseError, Precedence, token_precedence};
 
@@ -101,10 +101,38 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_grouped_expression(&mut self) -> Result<Expression, ParseError> {
-        self.lexer.next_token();
+        self.expect_peek(Token::LParen)?;
         let exp = self.parse_expression(Precedence::Lowest)?;
         self.expect_peek(Token::RParen)?;
         Ok(exp)
+    }
+
+    fn parse_block_statement(&mut self) -> Result<BlockStatement, ParseError> {
+        self.expect_peek(Token::LBrace)?;
+        let mut statements = vec![];
+        while *self.lexer.peek_token() != Token::RBrace {
+            if *self.lexer.peek_token() == Token::EndOfFile {
+                return Err(ParseError::UnexpectedToken(Token::EndOfFile));
+            }
+            statements.push(self.parse_statement()?);
+        }
+        self.expect_peek(Token::RBrace)?;
+        Ok(BlockStatement{ statements })
+    }
+
+    fn parse_if_expression(&mut self) -> Result<Expression, ParseError> {
+        self.expect_peek(Token::If)?;
+        let condition = self.parse_grouped_expression()?;
+        let consequence = self.parse_block_statement()?;
+        let alternative = match *self.lexer.peek_token() {
+            Token::Else => {
+                self.lexer.next_token();
+                Some(self.parse_block_statement()?)
+            },
+            _ => None,
+        };
+        Ok(Expression::If(Box::new(condition), consequence, alternative))
+
     }
 
     fn parse_expression(&mut self, precedence: Precedence) -> Result<Expression, ParseError> {
@@ -115,11 +143,11 @@ impl<'a> Parser<'a> {
             Token::Bang | Token::Minus => self.parse_prefix_expression()?,
             Token::True | Token::False => self.parse_boolean_literal()?,
             Token::LParen => self.parse_grouped_expression()?,
+            Token::If => self.parse_if_expression()?,
             // TODO: Treat the following tokens explicitly.
             Token::RParen |
             Token::LBrace |
             Token::RBrace |
-            Token::If |
             Token::Function |
             _ => { 
                 let other = self.lexer.next_token();

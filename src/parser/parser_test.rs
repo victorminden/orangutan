@@ -280,7 +280,7 @@ fn boolean_literal_statement_test() -> Result<(), ParseError> {
     let mut parser = Parser::new(Lexer::new(input));
     let program = parser.parse_program()?;
     parser.print_errors();
-    assert_eq!(program.statements.len(), 2);
+    assert_eq!(program.statements.len(), expected.len());
 
     for (expected, statement) in 
     expected.iter().zip(program.statements.iter()) {
@@ -288,4 +288,52 @@ fn boolean_literal_statement_test() -> Result<(), ParseError> {
     }
 
     Ok(())
+}
+
+#[test]
+fn if_statement_test() -> Result<(), ParseError> {
+    let input = "if(x<y){x}";
+
+    let mut parser = Parser::new(Lexer::new(input));
+    let program = parser.parse_program()?;
+    parser.print_errors();
+    assert_eq!(program.statements.len(), 1);
+
+    
+    if let Statement::Expression(expr) = &program.statements[0] {
+        if let Expression::If(condition, consequence, None) = expr {
+            assert_eq!(condition.to_string(), "(x < y)");
+            assert_eq!(consequence.to_string(), "{ x; }");
+            Ok(())
+        } else {
+            panic!();
+        }
+    } else {
+        panic!();
+    }
+}
+
+
+#[test]
+fn if_statement_with_else_test() -> Result<(), ParseError> {
+    let input = "if(x<y){x}else{z+7}";
+
+    let mut parser = Parser::new(Lexer::new(input));
+    let program = parser.parse_program()?;
+    parser.print_errors();
+    assert_eq!(program.statements.len(), 1);
+
+    
+    if let Statement::Expression(expr) = &program.statements[0] {
+        if let Expression::If(condition, consequence, Some(alt_bs)) = expr {
+            assert_eq!(condition.to_string(), "(x < y)");
+            assert_eq!(consequence.to_string(), "{ x; }");
+            assert_eq!(alt_bs.to_string(), "{ (z + 7); }");
+            Ok(())
+        } else {
+            panic!();
+        }
+    } else {
+        panic!();
+    }
 }

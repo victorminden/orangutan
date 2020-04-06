@@ -41,11 +41,11 @@ pub struct BlockStatement {
 
 impl fmt::Display for BlockStatement {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "{{")?;
+    write!(f, "{{ ")?;
     for statement in &self.statements {
         write!(f, "{}", statement)?;
     }
-    write!(f, "}}")
+    write!(f, " }}")
   }
 }
 
