@@ -9,8 +9,8 @@ pub struct Program {
 impl fmt::Display for Program {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Program:")?;
-        for stmt in &self.statements {
-            write!(f, "{}", stmt)?;
+        for statement in &self.statements {
+            write!(f, "{}", statement)?;
         }
         Ok(())
     }
@@ -33,6 +33,22 @@ impl fmt::Display for Statement {
     }
 }
 
+// TODO: BlockStatement type is essentially just Program -- remove?
+#[derive(Debug)]
+pub struct BlockStatement {
+    pub statements: Vec<Statement>,
+}
+
+impl fmt::Display for BlockStatement {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "{{")?;
+    for statement in &self.statements {
+        write!(f, "{}", statement)?;
+    }
+    write!(f, "}}")
+  }
+}
+
 #[derive(Debug)]
 pub enum Expression {
     Null,
@@ -41,6 +57,7 @@ pub enum Expression {
     BooleanLiteral(bool),
     Prefix(Token, Box<Expression>),
     Infix(Box<Expression>, Token, Box<Expression>),
+    If(Box<Expression>, BlockStatement, Option<BlockStatement>),
 }
 
 impl fmt::Display for Expression {
@@ -53,6 +70,13 @@ impl fmt::Display for Expression {
             Expression::Prefix(token, expr) => write!(f, "({}{})", token, **expr),
             Expression::Infix(left, token, right) => {
                 write!(f, "({} {} {})", **left, token, **right)
+            },
+            Expression::If(condition, consequence, alternative) => {
+                if let Some(alt_bs) = alternative {
+                    write!(f, "if {} {} else {}", condition, consequence, alt_bs)
+                } else {
+                    write!(f, "if {} {}", condition, consequence)
+                }
             }
         }
     }
