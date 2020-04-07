@@ -1,5 +1,5 @@
-use crate::token;
 use crate::lexer;
+use crate::parser;
 use std::io;
 use std::io::Write;
 
@@ -11,15 +11,15 @@ pub fn start() -> io::Result<()> {
         io::stdout().flush()?;
         let mut input = String::new();
         io::stdin().read_line(&mut input)?;
-        println!("Lexing...\n\n");
-        let mut l = lexer::Lexer::new(&input);
-        // TODO: This is currently an infinite loop.
-        loop {
-            let t = l.next_token();
-            println!("{:?}", t);
-            if t == token::Token::EndOfFile {
-                break;
+        println!("Parsing...\n\n");
+        let mut p = parser::Parser::new(lexer::Lexer::new(&input));
+        if let Ok(program) = p.parse_program() {
+            for statement in program.statements {
+                println!("{}", statement);
             }
+        } else {
+            println!("Error parsing program.")
         }
+        p.print_errors();
     }
 }
