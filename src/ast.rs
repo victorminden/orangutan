@@ -58,6 +58,8 @@ pub enum Expression {
     Prefix(Token, Box<Expression>),
     Infix(Box<Expression>, Token, Box<Expression>),
     If(Box<Expression>, BlockStatement, Option<BlockStatement>),
+    FunctionLiteral(Vec<String>, BlockStatement),
+    Call(Box<Expression>, Vec<Expression>),
 }
 
 impl fmt::Display for Expression {
@@ -77,7 +79,15 @@ impl fmt::Display for Expression {
                 } else {
                     write!(f, "if {} {}", condition, consequence)
                 }
-            }
+            },
+            Expression::FunctionLiteral(parameters, body) => {
+                write!(f, "fn({}) {}", parameters.join(", "), body)
+            },
+            Expression::Call(function, arguments) => {
+                // Map the vector of expressions to a vector of strings so we can join them with comma.
+                write!(f, "{}({})", function, 
+                    arguments.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(", "))
+            },
         }
     }
 }

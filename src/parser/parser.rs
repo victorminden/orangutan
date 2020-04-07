@@ -135,6 +135,27 @@ impl<'a> Parser<'a> {
 
     }
 
+    fn parse_function_parameters(&mut self) -> Result<Vec<String>, ParseError> {
+        let mut parameters = vec![];
+        if *self.lexer.peek_token() != Token::RParen {
+            parameters.push(self.parse_identifier_string()?);
+            while *self.lexer.peek_token() == Token::Comma {
+                self.lexer.next_token();
+                parameters.push(self.parse_identifier_string()?);
+            } 
+        }
+        Ok(parameters)
+    }
+
+    fn parse_function_literal(&mut self) -> Result<Expression, ParseError> {
+        self.expect_peek(Token::Function)?;
+        self.expect_peek(Token::LParen)?;
+        let parameters = self.parse_function_parameters()?;
+        self.expect_peek(Token::RParen)?;
+        let body = self.parse_block_statement()?;
+        Ok(Expression::FunctionLiteral(parameters, body))
+    }
+
     fn parse_expression(&mut self, precedence: Precedence) -> Result<Expression, ParseError> {
         // Match left/primary expression.
         let mut expr = match *self.lexer.peek_token() {
@@ -144,11 +165,7 @@ impl<'a> Parser<'a> {
             Token::True | Token::False => self.parse_boolean_literal()?,
             Token::LParen => self.parse_grouped_expression()?,
             Token::If => self.parse_if_expression()?,
-            // TODO: Treat the following tokens explicitly.
-            Token::RParen |
-            Token::LBrace |
-            Token::RBrace |
-            Token::Function |
+            Token::Function => self.parse_function_literal()?,
             _ => { 
                 let other = self.lexer.next_token();
                 return Err(ParseError::UnexpectedToken(other)); 
@@ -166,17 +183,22 @@ impl<'a> Parser<'a> {
                     Token::NotEqual |
                     Token::LessThan |
                     Token::GreaterThan => self.parse_infix_expression(expr)?,
+                    Token::LParen => self.parse_call_expression(expr)?,
                     _ => { return Ok(expr); },
                 };
         }
         Ok(expr)
     }
 
-    fn parse_identifier(&mut self) -> Result<Expression, ParseError> {
+    fn parse_identifier_string(&mut self) -> Result<String, ParseError> {
         match self.lexer.next_token() {
-            Token::Ident(name) => Ok(Expression::Ident(name)),
+            Token::Ident(name) => Ok(name),
             other => Err(ParseError::ExpectedIdent(other)),
         }
+    }
+
+    fn parse_identifier(&mut self) -> Result<Expression, ParseError> {
+        Ok(Expression::Ident(self.parse_identifier_string()?))
     }
 
     fn parse_integer_literal(&mut self) -> Result<Expression, ParseError> {
@@ -202,5 +224,20 @@ impl<'a> Parser<'a> {
         let token = self.lexer.next_token();
         let right_expr = self.parse_expression(token_precedence(&token))?;
         Ok(Expression::Infix(Box::new(left_expr), token, Box::new(right_expr)))
+    }
+
+    fn parse_call_expression(
+        &mut self, left_expr: Expression) -> Result<Expression, ParseError> {
+        self.expect_peek(Token::LParen)?;
+        let mut arguments = vec![];
+        if *self.lexer.peek_token() != Token::RParen {
+            arguments.push(self.parse_expression(Precedence::Lowest)?);
+        }
+        while *self.lexer.peek_token() == Token::Comma {
+            self.lexer.next_token();
+            arguments.push(self.parse_expression(Precedence::Lowest)?);
+        }
+        self.expect_peek(Token::RParen)?;
+        Ok(Expression::Call(Box::new(left_expr), arguments))
     }
 }
