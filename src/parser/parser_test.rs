@@ -234,6 +234,9 @@ fn operator_precedence_test() -> Result<(), ParseError> {
     (5 + 5) * 2
     2 / (5 + 5)
     !(true == true)
+    a + add(b * c) + d
+    add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))
+    add(a + b + c * d / f + g)
     ";
     
     let expected = vec![
@@ -252,12 +255,15 @@ fn operator_precedence_test() -> Result<(), ParseError> {
         "((5 + 5) * 2);",
         "(2 / (5 + 5));",
         "(!(true == true));",
+        "((a + add((b * c))) + d);",
+        "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)));",
+        "add((((a + b) + ((c * d) / f)) + g));",
     ];
 
     let mut parser = Parser::new(Lexer::new(input));
     let program = parser.parse_program()?;
     parser.print_errors();
-    //assert_eq!(program.statements.len(), expected.len());
+    assert_eq!(program.statements.len(), expected.len());
 
     for (expected, statement) in 
     expected.iter().zip(program.statements.iter()) {
