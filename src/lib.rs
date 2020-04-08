@@ -4,3 +4,4 @@ mod lexer;
 mod ast;
 mod parser;
 mod object;
+mod evaluator;
