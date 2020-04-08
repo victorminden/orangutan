@@ -1,3 +1,11 @@
+mod parse_error;
+mod precedence;
+#[cfg(test)]
+mod parser_test;
+
+pub use self::parse_error::*;
+pub use self::precedence::*;
+
 use crate::lexer::Lexer;
 use crate::ast::{Program, Statement, Expression, BlockStatement};
 use crate::token::Token;
