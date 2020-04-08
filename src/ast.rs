@@ -51,7 +51,6 @@ impl fmt::Display for BlockStatement {
 
 #[derive(Debug)]
 pub enum Expression {
-    Null,
     Ident(String),
     IntegerLiteral(i32),
     BooleanLiteral(bool),
@@ -65,7 +64,6 @@ pub enum Expression {
 impl fmt::Display for Expression {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Expression::Null => write!(f, "<null>"),
             Expression::Ident(ident) => write!(f, "{}", ident),
             Expression::IntegerLiteral(i) => write!(f, "{}", i),
             Expression::BooleanLiteral(b) => write!(f, "{}", b),

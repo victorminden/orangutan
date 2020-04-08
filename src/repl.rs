@@ -4,8 +4,24 @@ use std::io;
 use std::io::Write;
 
 const PROMPT: &str = ">>";
+const MONKEY_FACE: &str = "            __,__
+   .--.  .-\"     \"-.  .--.
+  / .. \\/  .-. .-.  \\/ .. \\
+ | |  \'|  /   Y   \\  |\'  | |
+ | \\   \\  \\ 0 | 0 /  /   / |
+  \\ \'- ,\\.-\"\"\"\"\"\"\"-./, -\' /
+   \'\'-\' /_   ^ ^   _\\ \'-\'\'
+       |  \\._   _./  |
+       \\   \\ \'~\' /   /
+        \'._ \'-=-\' _.\'
+           \'-----\'
+";
+
 
 pub fn start() -> io::Result<()> {
+    println!("Welcome to the Monkey programming language!");
+    println!("{}", MONKEY_FACE);
+    println!("Feel free to type in commands to be parsed (but not yet evaluated)");
     loop {
         print!("{}", PROMPT);
         io::stdout().flush()?;
