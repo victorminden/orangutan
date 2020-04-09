@@ -39,11 +39,12 @@ pub fn start() -> io::Result<()> {
             }
         };
 
-        if let Ok(evaluated) = evaluator::eval(&program) {
-            println!("{}", evaluated);
-        } else {
-            println!("Error encountered while evaluating the input!");
-            continue;
+        match evaluator::eval(&program) {
+            Ok(evaluated) => println!("{}", evaluated),
+            Err(error) => {
+                println!("Error encountered while evaluating the input!");
+                println!("{}", error)
+            },
         }
     }
 }

@@ -26,7 +26,7 @@ impl fmt::Display for EvalError {
             EvalError::PrefixTypeMismatch(token, _) => {
                 write!(f, "EvalError: Type mismatch for prefix operator `{}`", token)
             },
-            EvalError::UnknownError => write!(f, "ParseError: UnknownError!"),
+            EvalError::UnknownError => write!(f, "EvalError: UnknownError!"),
         }
     }
 }
