@@ -157,6 +157,10 @@ mod tests {
             ("!!true", true),
             ("!!false", false),
             ("!5", false),
+            ("5  < 3", false),
+            ("5 == 5", true),
+            ("1 > 2", false),
+            ("1 != 1", false),
         ];
     
         for (input, want) in tests {
