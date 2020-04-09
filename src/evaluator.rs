@@ -1,3 +1,4 @@
+use std::fmt;
 use crate::ast::{Program, Statement, BlockStatement, Expression};
 use crate::object::Object;
 use crate::token::Token;
@@ -8,6 +9,26 @@ pub enum EvalError {
     UnknownInfixOperator(Token),
     InfixTypeMismatch(Object, Token, Object),
     PrefixTypeMismatch(Token, Object),
+}
+
+impl fmt::Display for EvalError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            EvalError::UnknownPrefixOperator(token) => {
+                write!(f, "EvalError: Unknown prefix operator `{}`", token)
+            },
+            EvalError::UnknownInfixOperator(token) => {
+                write!(f, "EvalError: Unknown infix operator `{}`", token)
+            },
+            EvalError::InfixTypeMismatch(_, token, _) => {
+                write!(f, "EvalError: Type mismatch for infix operator `{}`", token)
+            },
+            EvalError::PrefixTypeMismatch(token, _) => {
+                write!(f, "EvalError: Type mismatch for prefix operator `{}`", token)
+            },
+            EvalError::UnknownError => write!(f, "ParseError: UnknownError!"),
+        }
+    }
 }
 
 pub fn eval(p: &Program) -> Result<Object, EvalError> {
@@ -265,6 +286,22 @@ mod tests {
             match evaluated {
                 Ok(Object::Integer(got)) => assert_eq!(got, want),
                 _ => panic!("Did not get Object::Integer!"),
+            }
+        }
+    }
+    #[test]
+    fn errors_test() {
+        let tests = vec![
+            ("5 + true;", "EvalError: Type mismatch for infix operator `+`"),
+            ("5 + true; 5", "EvalError: Type mismatch for infix operator `+`"),
+            ("-true;", "EvalError: Type mismatch for prefix operator `-`"),
+        ];
+    
+        for (input, want) in tests {
+            let evaluated = eval_test(input);
+            match evaluated {
+                Err(got) => assert_eq!(got.to_string(), want),
+                _ => panic!("Did not get EvalError!"),
             }
         }
     }
