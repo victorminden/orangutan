@@ -35,6 +35,9 @@ pub fn eval_block_statement(bs: &BlockStatement) -> Result<Object, EvalError> {
 fn eval_statement(s: &Statement) -> Result<Object, EvalError> {
     match s {
         Statement::Expression(expr) => eval_expression(&expr),
+        Statement::Return(expr) => {
+            Ok(Object::Return(Box::new(eval_expression(&expr)?)))
+        },
         _ => Err(EvalError::UnknownError),
     }
 }
@@ -237,7 +240,25 @@ mod tests {
             match evaluated {
                 Ok(Object::Integer(got)) => assert_eq!(got, want),
                 Ok(Object::Null) => assert_eq!(want, -1),
-                _ => panic!("Did not get Object::Boolean!"),
+                _ => panic!("Did not get Object::Integer or Object::Null!"),
+            }
+        }
+    }
+
+    #[test]
+    fn return_test() {
+        let tests = vec![
+            ("return 10;", 10),
+            ("return 10; 9;", 10),
+            ("return 2 * 5; 9;", 10),
+            ("9; return 2 * 5; 9;", 10),
+        ];
+    
+        for (input, want) in tests {
+            let evaluated = eval_test(input);
+            match evaluated {
+                Ok(Object::Integer(got)) => assert_eq!(got, want),
+                _ => panic!("Did not get Object::Integer!"),
             }
         }
     }
