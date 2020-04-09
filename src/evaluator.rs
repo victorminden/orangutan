@@ -4,6 +4,7 @@ use crate::token::Token;
 
 pub enum EvalError {
     UnknownError,
+    UnknownPrefixOperator(Token, Object),
 }
 
 pub fn eval(p: Program) -> Result<Object, EvalError> {
@@ -40,7 +41,14 @@ fn eval_prefix_expression(
     let obj = eval_expression(right)?;
     match prefix {
         Token::Bang => Ok(Object::Boolean(!obj.is_truthy())),
-        _ => Err(EvalError::UnknownError),
+        Token::Minus => {
+            // Optional: Could choose to return Null for non-integral type.
+            match obj {
+                Object::Integer(value) => Ok(Object::Integer(-value)),
+                other => Err(EvalError::UnknownPrefixOperator(Token::Minus, other)),
+            }
+        }
+        other => Err(EvalError::UnknownPrefixOperator(other.clone(), obj)),
     }
 }
 
@@ -64,6 +72,8 @@ mod tests {
         let tests = vec![
             ("5", 5),
             ("10", 10),
+            ("-5", -5),
+            ("-10", -10),
         ];
     
         for (input, want) in tests {
