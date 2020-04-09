@@ -1,4 +1,4 @@
-use crate::ast::{Program, Statement, Expression};
+use crate::ast::{Program, Statement, BlockStatement, Expression};
 use crate::object::Object;
 use crate::token::Token;
 
@@ -10,9 +10,9 @@ pub enum EvalError {
     PrefixTypeMismatch(Token, Object),
 }
 
-pub fn eval(p: Program) -> Result<Object, EvalError> {
+pub fn eval(p: &Program) -> Result<Object, EvalError> {
     let mut result = Object::Null;
-    for statement in p.statements {
+    for statement in &p.statements {
         result = eval_statement(statement)?;
         if let Object::Return(value) = result {
             return Ok(*value);
@@ -21,7 +21,18 @@ pub fn eval(p: Program) -> Result<Object, EvalError> {
     return Ok(result);
 }
 
-fn eval_statement(s: Statement) -> Result<Object, EvalError> {
+pub fn eval_block_statement(bs: &BlockStatement) -> Result<Object, EvalError> {
+    let mut result = Object::Null;
+    for statement in &bs.statements {
+        result = eval_statement(statement)?;
+        if let Object::Return(_) = result {
+            return Ok(result);
+        }
+    }
+    return Ok(result);
+}
+
+fn eval_statement(s: &Statement) -> Result<Object, EvalError> {
     match s {
         Statement::Expression(expr) => eval_expression(&expr),
         _ => Err(EvalError::UnknownError),
@@ -37,10 +48,26 @@ fn eval_expression(e: &Expression) -> Result<Object, EvalError> {
         },
         Expression::Infix(left, operator, right) => {
             eval_infix_expression(left, operator, right)
-        }
+        },
+        Expression::If(condition, consequence, alternative) => {
+            eval_if_expression(condition, consequence, alternative)
+        },
         _ => Err(EvalError::UnknownError),
     }
 }
+
+fn eval_if_expression(
+    condition: &Expression, 
+    consequence: &BlockStatement, 
+    alternative: &Option<BlockStatement>) -> Result<Object, EvalError> {
+        if eval_expression(condition)?.is_truthy() {
+            return eval_block_statement(consequence);
+        }
+        if let Some(bs) = alternative {
+            return eval_block_statement(bs);
+        }
+        return Ok(Object::Null);
+    }
 
 fn eval_prefix_expression(
     prefix: &Token, right: &Expression) -> Result<Object, EvalError> {
@@ -114,7 +141,7 @@ mod tests {
         let mut parser = Parser::new(Lexer::new(input));
         
         match parser.parse_program() {
-            Ok(program) => eval(program),
+            Ok(program) => eval(&program),
             _ => panic!("Input could not be parsed!"),
         }
     }
@@ -187,6 +214,29 @@ mod tests {
             let evaluated = eval_test(input);
             match evaluated {
                 Ok(Object::Boolean(got)) => assert_eq!(got, want),
+                _ => panic!("Did not get Object::Boolean!"),
+            }
+        }
+    }
+
+    #[test]
+    fn if_else_expression_test() {
+        // Use -1 as a placeholder to indicate a Null return.
+        let tests = vec![
+            ("if (true) { 10 }", 10),
+            ("if (false) { 10 }", -1),
+            ("if (1) { 10 }", 10),
+            ("if (1 < 2) { 10 }", 10),
+            ("if (1 > 2) { 10 }", -1),
+            ("if (1 > 2) { 10 } else { 20 }", 20),
+            ("if (1 < 2) { 10 } else { 20 }", 10),
+        ];
+    
+        for (input, want) in tests {
+            let evaluated = eval_test(input);
+            match evaluated {
+                Ok(Object::Integer(got)) => assert_eq!(got, want),
+                Ok(Object::Null) => assert_eq!(want, -1),
                 _ => panic!("Did not get Object::Boolean!"),
             }
         }
