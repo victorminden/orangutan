@@ -7,7 +7,7 @@ pub enum Token {
     EndOfFile,
     // Identifiers + literals
     Ident(String),
-    Integer(i32),
+    Integer(i64),
     // Operators
     Assign,
     Plus,

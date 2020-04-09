@@ -1,4 +1,4 @@
-use crate::ast::Program;
+use crate::ast::{Program, Statement, Expression};
 use crate::object::Object;
 
 pub enum EvalError {
@@ -6,16 +6,59 @@ pub enum EvalError {
 }
 
 pub fn eval(p: Program) -> Result<Object, EvalError> {
-    println!("{}", p);
-    Err(EvalError::UnknownError)
+    let mut result = Object::Null;
+    for statement in p.statements {
+        result = eval_statement(statement)?;
+        if let Object::Return(value) = result {
+            return Ok(*value);
+        }
+    }
+    return Ok(result);
+}
+
+fn eval_statement(s: Statement) -> Result<Object, EvalError> {
+    match s {
+        Statement::Expression(expr) => eval_expression(expr),
+        _ => Err(EvalError::UnknownError),
+    }
+}
+
+fn eval_expression(e: Expression) -> Result<Object, EvalError> {
+    match e {
+        Expression::IntegerLiteral(value) => Ok(Object::Integer(value)),
+        _ => Err(EvalError::UnknownError),
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::parser::Parser;
+    use crate::lexer::Lexer;
+
     
+    fn eval_test(input: &str) -> Result<Object, EvalError> {
+        let mut parser = Parser::new(Lexer::new(input));
+        
+        match parser.parse_program() {
+            Ok(program) => eval(program),
+            _ => panic!("Input could not be parsed!"),
+        }
+    }
+
     #[test]
     fn eval_integer_expression_test() {
-        panic!();
+        let tests = vec![
+            ("5", 5),
+            ("10", 10),
+        ];
+    
+        for (input, want) in tests {
+            let evaluated = eval_test(input);
+            match evaluated {
+                Ok(Object::Integer(got)) => assert_eq!(got, want),
+                _ => panic!("Did not get Object::Integer!"),
+            }
+        }
     }
 }

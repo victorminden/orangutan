@@ -52,7 +52,7 @@ impl fmt::Display for BlockStatement {
 #[derive(Debug)]
 pub enum Expression {
     Ident(String),
-    IntegerLiteral(i32),
+    IntegerLiteral(i64),
     BooleanLiteral(bool),
     Prefix(Token, Box<Expression>),
     Infix(Box<Expression>, Token, Box<Expression>),

@@ -85,7 +85,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn read_number(&mut self, first: char) -> i32 {
+    fn read_number(&mut self, first: char) -> i64 {
         let mut ident = String::new();
         ident.push(first);
         while let Some(ch) = self.input.peek() {
@@ -96,8 +96,8 @@ impl<'a> Lexer<'a> {
                 ident.push(ch);
             }
         }
-        // Bad practice to use unwrap, but we know that what we put together can be a valid i32.
-        return ident.parse::<i32>().unwrap();
+        // Bad practice to use unwrap, but we know that what we put together can be a valid int.
+        return ident.parse::<i64>().unwrap();
     }
 
     fn read_identifier(&mut self, first: char) -> String {
