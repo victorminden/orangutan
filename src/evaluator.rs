@@ -1,6 +1,10 @@
 use crate::ast::{Program, Statement, Expression};
 use crate::object::Object;
 
+const TRUE: Object = Object::Boolean(true);
+const FALSE: Object = Object::Boolean(false);
+const NULL: Object = Object::Null;
+
 pub enum EvalError {
     UnknownError,
 }
@@ -26,7 +30,9 @@ fn eval_statement(s: Statement) -> Result<Object, EvalError> {
 fn eval_expression(e: Expression) -> Result<Object, EvalError> {
     match e {
         Expression::IntegerLiteral(value) => Ok(Object::Integer(value)),
-        Expression::BooleanLiteral(value) => Ok(Object::Boolean(value)),
+        Expression::BooleanLiteral(value) => {
+            if value { Ok(TRUE) } else { Ok(FALSE) }
+        },
         _ => Err(EvalError::UnknownError),
     }
 }
@@ -37,7 +43,6 @@ mod tests {
     use crate::parser::Parser;
     use crate::lexer::Lexer;
 
-    
     fn eval_test(input: &str) -> Result<Object, EvalError> {
         let mut parser = Parser::new(Lexer::new(input));
         
