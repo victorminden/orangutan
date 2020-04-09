@@ -26,6 +26,7 @@ fn eval_statement(s: Statement) -> Result<Object, EvalError> {
 fn eval_expression(e: Expression) -> Result<Object, EvalError> {
     match e {
         Expression::IntegerLiteral(value) => Ok(Object::Integer(value)),
+        Expression::BooleanLiteral(value) => Ok(Object::Boolean(value)),
         _ => Err(EvalError::UnknownError),
     }
 }
@@ -58,6 +59,22 @@ mod tests {
             match evaluated {
                 Ok(Object::Integer(got)) => assert_eq!(got, want),
                 _ => panic!("Did not get Object::Integer!"),
+            }
+        }
+    }
+
+    #[test]
+    fn eval_boolean_expression_test() {
+        let tests = vec![
+            ("true", true),
+            ("false", false),
+        ];
+    
+        for (input, want) in tests {
+            let evaluated = eval_test(input);
+            match evaluated {
+                Ok(Object::Boolean(got)) => assert_eq!(got, want),
+                _ => panic!("Did not get Object::Boolean!"),
             }
         }
     }
