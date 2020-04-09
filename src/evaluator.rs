@@ -1,9 +1,6 @@
 use crate::ast::{Program, Statement, Expression};
 use crate::object::Object;
-
-const TRUE: Object = Object::Boolean(true);
-const FALSE: Object = Object::Boolean(false);
-const NULL: Object = Object::Null;
+use crate::token::Token;
 
 pub enum EvalError {
     UnknownError,
@@ -22,17 +19,27 @@ pub fn eval(p: Program) -> Result<Object, EvalError> {
 
 fn eval_statement(s: Statement) -> Result<Object, EvalError> {
     match s {
-        Statement::Expression(expr) => eval_expression(expr),
+        Statement::Expression(expr) => eval_expression(&expr),
         _ => Err(EvalError::UnknownError),
     }
 }
 
-fn eval_expression(e: Expression) -> Result<Object, EvalError> {
+fn eval_expression(e: &Expression) -> Result<Object, EvalError> {
     match e {
-        Expression::IntegerLiteral(value) => Ok(Object::Integer(value)),
-        Expression::BooleanLiteral(value) => {
-            if value { Ok(TRUE) } else { Ok(FALSE) }
+        Expression::IntegerLiteral(value) => Ok(Object::Integer(*value)),
+        Expression::BooleanLiteral(value) => Ok(Object::Boolean(*value)),
+        Expression::Prefix(operator, expr) => {
+            eval_prefix_expression(operator, expr)
         },
+        _ => Err(EvalError::UnknownError),
+    }
+}
+
+fn eval_prefix_expression(
+    prefix: &Token, right: &Expression) -> Result<Object, EvalError> {
+    let obj = eval_expression(right)?;
+    match prefix {
+        Token::Bang => Ok(Object::Boolean(!obj.is_truthy())),
         _ => Err(EvalError::UnknownError),
     }
 }
@@ -73,6 +80,25 @@ mod tests {
         let tests = vec![
             ("true", true),
             ("false", false),
+        ];
+    
+        for (input, want) in tests {
+            let evaluated = eval_test(input);
+            match evaluated {
+                Ok(Object::Boolean(got)) => assert_eq!(got, want),
+                _ => panic!("Did not get Object::Boolean!"),
+            }
+        }
+    }
+
+    #[test]
+    fn bang_operator_test() {
+        let tests = vec![
+            ("!true", false),
+            ("!false", true),
+            ("!!true", true),
+            ("!!false", false),
+            ("!5", false),
         ];
     
         for (input, want) in tests {
