@@ -67,8 +67,23 @@ fn eval_infix_expression(
         (Object::Integer(left), Object::Integer(right)) => {
             eval_integer_infix_expression(left, op, right)
         },
+        (Object::Boolean(left), Object::Boolean(right)) => {
+            eval_boolean_infix_expression(left, op, right)
+        },
         (a, b)  => Err(EvalError::InfixTypeMismatch(a, op.clone(), b)),
     }
+}
+
+fn eval_boolean_infix_expression(
+    left: bool, op: &Token, right: bool) -> Result<Object, EvalError> {
+        let obj = match op {
+            Token::Equal => Object::Boolean(left == right),
+            Token::NotEqual => Object::Boolean(left != right),
+            other => {
+                return Err(EvalError::UnknownInfixOperator(other.clone()));
+            },
+        };
+        Ok(obj)
 }
 
 fn eval_integer_infix_expression(
@@ -138,6 +153,11 @@ mod tests {
         let tests = vec![
             ("true", true),
             ("false", false),
+            ("true == true", true),
+            ("true == false", false),
+            ("true != true", false),
+            ("true != false", true),
+            ("(1<2) == true", true),
         ];
     
         for (input, want) in tests {
