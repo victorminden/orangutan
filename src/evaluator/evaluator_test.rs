@@ -79,6 +79,21 @@ fn eval_boolean_expression_test() {
 }
 
 #[test]
+fn eval_string_expression_test() {
+    let tests = vec![
+        ("\"foo\" + \"bar\"", "foobar"),
+    ];
+
+    for (input, want) in tests {
+        let evaluated = eval_test(input);
+        match evaluated {
+            Ok(Object::Str(got)) => assert_eq!(got, want),
+            _ => panic!("Did not get Object::Str!"),
+        }
+    }
+}
+
+#[test]
 fn bang_operator_test() {
     let tests = vec![
         ("!true", false),

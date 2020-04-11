@@ -166,6 +166,13 @@ fn eval_infix_expression(
         (Object::Boolean(left), Object::Boolean(right)) => {
             eval_boolean_infix_expression(left, op, right)
         },
+        (Object::Str(left), Object::Str(right)) => {
+            if *op != Token::Plus {
+                Err(EvalError::UnknownInfixOperator(op.clone()))
+            } else {
+                Ok(Object::Str(format!("{}{}", left, right)))
+            }
+        },
         (a, b)  => Err(EvalError::InfixTypeMismatch(a, op.clone(), b)),
     }
 }
