@@ -1,7 +1,9 @@
 mod environment;
+mod built_in_functions;
 
 use std::fmt;
 pub use self::environment::*;
+pub use self::built_in_functions::*;
 use crate::ast::BlockStatement;
 use crate::evaluator::EvalError;
 
