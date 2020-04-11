@@ -16,7 +16,7 @@ impl fmt::Display for Program {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Statement {
     Let(String, Expression),
     Return(Expression),
@@ -34,7 +34,7 @@ impl fmt::Display for Statement {
 }
 
 // TODO: BlockStatement type is essentially just Program -- remove?
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BlockStatement {
     pub statements: Vec<Statement>,
 }
@@ -49,7 +49,7 @@ impl fmt::Display for BlockStatement {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Expression {
     Ident(String),
     IntegerLiteral(i64),

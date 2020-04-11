@@ -80,6 +80,15 @@ fn eval_statement(s: &Statement, env: &mut Environment) -> Result<Object, EvalEr
     }
 }
 
+fn eval_expressions(
+    exprs: &[Expression], env: &mut Environment) -> Result<Vec<Object>, EvalError> {
+    let mut results = vec![];
+    for expr in exprs {
+        results.push(eval_expression(expr, env)?);
+    }
+    Ok(results)
+}
+
 fn eval_expression(e: &Expression, env: &mut Environment) -> Result<Object, EvalError> {
     match e {
         Expression::IntegerLiteral(value) => Ok(Object::Integer(*value)),
@@ -94,7 +103,14 @@ fn eval_expression(e: &Expression, env: &mut Environment) -> Result<Object, Eval
             eval_if_expression(condition, consequence, alternative, env)
         },
         Expression::Ident(name) => eval_identifier(name, env),
-        _ => Err(EvalError::UnknownError),
+        Expression::FunctionLiteral(parameters, body) => {
+            Ok(Object::Function(parameters.clone(), body.clone(), env.clone()))
+        },
+        Expression::Call(expr, arguments) => {
+            let function = eval_expression(&**expr, env)?;
+            let args = eval_expressions(arguments, env)?;
+            apply_function(&function, &args)
+        },
     }
 }
 
@@ -181,4 +197,27 @@ fn eval_integer_infix_expression(
         },
     };
     Ok(obj)
+}
+
+fn apply_function(
+    function: &Object, args: &Vec<Object>) -> Result<Object, EvalError> {
+    if let Object::Function(parameters, body, env) = function {
+        if parameters.len() != args.len() {
+            // TODO: Make this a custom error.
+            return Err(EvalError::UnknownError);
+        }
+        // Build environment for function.
+        let mut extended_env = env.clone();
+        for (p, a) in parameters.iter().zip(args) {
+            extended_env.set(p, a.clone())
+        }
+        // Evaluate the function with this environment.
+        match eval_block_statement(body, &mut extended_env) {
+            Ok(Object::Return(value)) => Ok(*value),
+            other => other,
+        }
+    } else {
+        // TODO: Make this a more specific error.
+        Err(EvalError::UnknownError)
+    }
 }
