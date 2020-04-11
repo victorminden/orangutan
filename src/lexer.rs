@@ -63,8 +63,11 @@ impl<'a> Lexer<'a> {
                     return Token::NotEqual;
                 }
                 return Token::Bang;
-            }
+            },
             None => Token::EndOfFile,
+            Some('"') => {
+                self.read_string()
+            },
             Some(a) => {
                 if is_valid_name_symbol(&a) {
                     return lookup_ident(self.read_identifier(a));
@@ -112,6 +115,19 @@ impl<'a> Lexer<'a> {
             }
         }
         ident
+    }
+
+    fn read_string(&mut self) -> Token {
+        // If the string is the final token of the input, the closing quote may be ignored.
+        // TODO: Consider changing this to throw an error.
+        let mut string = String::new();
+        while let Some(ch) = self.input.next() {
+            if ch == '"' {
+                break;
+            }
+            string.push(ch);
+        }
+        return Token::Str(string);
     }
 }
 
@@ -163,7 +179,9 @@ mod tests {
             return false;
             }
         1 != 2
-        1 == 1";
+        1 == 1
+        \"foobar\"
+        \"foo bar\"";
         let tests = vec![
             Token::Let,
             Token::Ident(String::from("five")),
@@ -224,6 +242,8 @@ mod tests {
             Token::Integer(1),
             Token::Equal,
             Token::Integer(1),
+            Token::Str(String::from("foobar")),
+            Token::Str(String::from("foo bar")),
             Token::EndOfFile,
         ];
         let mut line = Lexer::new(sample_input);

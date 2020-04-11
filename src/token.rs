@@ -8,6 +8,7 @@ pub enum Token {
     // Identifiers + literals
     Ident(String),
     Integer(i64),
+    Str(String),
     // Operators
     Assign,
     Plus,
