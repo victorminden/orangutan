@@ -12,6 +12,7 @@ pub enum ParseError {
     ExpectedPrefix(Token),
     ExpectedRParen(Token),
     ExpectedSemicolon(Token),
+    ExpectedStr(Token),
     UnknownError,
 }
 
@@ -23,6 +24,7 @@ impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             ParseError::ExpectedIdent(token) => expected_x_got_y(f, "identifier", token),
+            ParseError::ExpectedStr(token) => expected_x_got_y(f, "string", token),
             ParseError::ExpectedLet(token) => expected_x_got_y(f, "let", token),
             ParseError::ExpectedAssign(token) => expected_x_got_y(f, "assign", token),
             ParseError::ExpectedInteger(token) => expected_x_got_y(f, "integer", token),

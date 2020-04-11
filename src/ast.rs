@@ -54,6 +54,7 @@ pub enum Expression {
     Ident(String),
     IntegerLiteral(i64),
     BooleanLiteral(bool),
+    StringLiteral(String),
     Prefix(Token, Box<Expression>),
     Infix(Box<Expression>, Token, Box<Expression>),
     If(Box<Expression>, BlockStatement, Option<BlockStatement>),
@@ -67,6 +68,7 @@ impl fmt::Display for Expression {
             Expression::Ident(ident) => write!(f, "{}", ident),
             Expression::IntegerLiteral(i) => write!(f, "{}", i),
             Expression::BooleanLiteral(b) => write!(f, "{}", b),
+            Expression::StringLiteral(s) => write!(f, "\"{}\"", s),
             Expression::Prefix(token, expr) => write!(f, "({}{})", token, **expr),
             Expression::Infix(left, token, right) => {
                 write!(f, "({} {} {})", **left, token, **right)

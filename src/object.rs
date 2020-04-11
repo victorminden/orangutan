@@ -9,6 +9,7 @@ pub enum Object {
     Null,
     Integer(i64),
     Boolean(bool),
+    Str(String),
     Return(Box<Object>),
     Function(Vec<String>, BlockStatement, Environment),
 }
@@ -17,6 +18,7 @@ impl fmt::Display for Object {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Object::Null => write!(f, "null"),
+            Object::Str(value) => write!(f, "\"{}\"", value),
             Object::Integer(value) => write!(f, "{}", value),
             Object::Boolean(value) => write!(f, "{}", value),
             Object::Return(boxed_object) => write!(f, "{}", **boxed_object),

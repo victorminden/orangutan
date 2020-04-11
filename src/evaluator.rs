@@ -92,6 +92,7 @@ fn eval_expressions(
 fn eval_expression(e: &Expression, env: &mut Environment) -> Result<Object, EvalError> {
     match e {
         Expression::IntegerLiteral(value) => Ok(Object::Integer(*value)),
+        Expression::StringLiteral(value) => Ok(Object::Str(value.clone())),
         Expression::BooleanLiteral(value) => Ok(Object::Boolean(*value)),
         Expression::Prefix(operator, expr) => {
             eval_prefix_expression(operator, expr, env)

@@ -43,6 +43,21 @@ fn eval_integer_expression_test() {
 }
 
 #[test]
+fn eval_string_literal_test() {
+    let tests = vec![
+        ("\"Hello, world!\"", "Hello, world!"),
+    ];
+
+    for (input, want) in tests {
+        let evaluated = eval_test(input);
+        match evaluated {
+            Ok(Object::Str(got)) => assert_eq!(got, want),
+            _ => panic!("Did not get Object::Str!"),
+        }
+    }
+}
+
+#[test]
 fn eval_boolean_expression_test() {
     let tests = vec![
         ("true", true),

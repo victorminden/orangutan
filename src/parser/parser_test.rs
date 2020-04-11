@@ -400,3 +400,27 @@ fn call_expression_test() -> Result<(), ParseError> {
     Ok(())
 }
 
+#[test]
+fn string_literal_statement_test() -> Result<(), ParseError> {
+    let input = "\"Hello\" 
+        \"world\"
+        \"hello, world\"";
+    
+    let expected = vec![
+        "\"Hello\";",
+        "\"world\";",
+        "\"hello, world\";",
+    ];
+
+    let mut parser = Parser::new(Lexer::new(input));
+    let program = parser.parse_program()?;
+    parser.print_errors();
+    assert_eq!(program.statements.len(), expected.len());
+
+    for (expected, statement) in 
+    expected.iter().zip(program.statements.iter()) {
+        assert_eq!(&statement.to_string(), expected);
+    }
+
+    Ok(())
+}

@@ -166,11 +166,19 @@ impl<'a> Parser<'a> {
         Ok(Expression::FunctionLiteral(parameters, body))
     }
 
+    fn parse_string_literal(&mut self) -> Result<Expression, ParseError> {
+        match self.lexer.next_token() {
+            Token::Str(string) => Ok(Expression::StringLiteral(string)),
+            other => Err(ParseError::ExpectedStr(other)),
+        }
+    }
+
     fn parse_expression(&mut self, precedence: Precedence) -> Result<Expression, ParseError> {
         // Match left/primary expression.
         let mut expr = match *self.lexer.peek_token() {
             Token::Ident(_) => self.parse_identifier()?, 
             Token::Integer(_) => self.parse_integer_literal()?,
+            Token::Str(_) => self.parse_string_literal()?,
             Token::Bang | Token::Minus => self.parse_prefix_expression()?,
             Token::True | Token::False => self.parse_boolean_literal()?,
             Token::LParen => self.parse_grouped_expression()?,
