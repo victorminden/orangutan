@@ -3,7 +3,9 @@ mod environment;
 use std::fmt;
 pub use self::environment::*;
 use crate::ast::BlockStatement;
+use crate::evaluator::EvalError;
 
+pub type BuiltInFunction = fn(Vec<Object>) -> Result<Object, EvalError>;
 #[derive(Debug, Clone)]
 pub enum Object {
     Null,
@@ -12,6 +14,7 @@ pub enum Object {
     Str(String),
     Return(Box<Object>),
     Function(Vec<String>, BlockStatement, Environment),
+    BuiltIn(BuiltInFunction),
 }
 
 impl fmt::Display for Object {
@@ -25,6 +28,7 @@ impl fmt::Display for Object {
             Object::Function(parameters, body, _) => {
                 write!(f, "fn({}) {}", parameters.join(", "), body)
             },
+            Object::BuiltIn(_) => write!(f, "Built-In function"),
         }
     }
 }

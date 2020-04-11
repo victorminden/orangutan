@@ -3,7 +3,7 @@ mod evaluator_test;
 
 use std::fmt;
 use crate::ast::{Program, Statement, BlockStatement, Expression};
-use crate::object::{Object, Environment};
+use crate::object::{Object, Environment, get_built_in};
 use crate::token::Token;
 
 pub enum EvalError {
@@ -13,6 +13,7 @@ pub enum EvalError {
     UnknownIdentifier(String),
     InfixTypeMismatch(Object, Token, Object),
     PrefixTypeMismatch(Token, Object),
+    WrongNumberOfArguments(u32, u32),
 }
 
 impl fmt::Display for EvalError {
@@ -33,6 +34,10 @@ impl fmt::Display for EvalError {
             EvalError::UnknownIdentifier(name) => {
                 write!(f, "EvalError: Unknown identifier `{}`", name)
             },
+            EvalError::WrongNumberOfArguments(got, want) => {
+                write!(f, "EvalError: Wrong number of parameters (got: {}, want: {}",
+                got, want)
+            }
             EvalError::UnknownError => write!(f, "EvalError: UnknownError!"),
         }
     }
@@ -118,8 +123,12 @@ fn eval_expression(e: &Expression, env: &mut Environment) -> Result<Object, Eval
 fn eval_identifier(
     name: &String, env: &mut Environment) -> Result<Object, EvalError> {
     if let Some(obj) = env.get(name) {
-        Ok(obj.clone())
-    } else {
+        return Ok(obj.clone());
+    } 
+    if let Some(obj) = get_built_in(name) {
+        return Ok(obj.clone())
+    }
+    else {
         Err(EvalError::UnknownIdentifier(name.clone()))
     }
 }
@@ -209,23 +218,28 @@ fn eval_integer_infix_expression(
 
 fn apply_function(
     function: &Object, args: &Vec<Object>) -> Result<Object, EvalError> {
-    if let Object::Function(parameters, body, env) = function {
-        if parameters.len() != args.len() {
-            // TODO: Make this a custom error.
-            return Err(EvalError::UnknownError);
-        }
-        // Build environment for function.
-        let mut extended_env = env.clone();
-        for (p, a) in parameters.iter().zip(args) {
-            extended_env.set(p, a.clone())
-        }
-        // Evaluate the function with this environment.
-        match eval_block_statement(body, &mut extended_env) {
-            Ok(Object::Return(value)) => Ok(*value),
-            other => other,
-        }
-    } else {
+    match function {
+        Object::Function(parameters, body, env) => {
+            if parameters.len() != args.len() {
+                return Err(EvalError::WrongNumberOfArguments(
+                    parameters.len() as u32, args.len() as u32));
+            }
+            // Build environment for function.
+            let mut extended_env = env.clone();
+            for (p, a) in parameters.iter().zip(args) {
+                extended_env.set(p, a.clone())
+            }
+            // Evaluate the function with this environment.
+            match eval_block_statement(body, &mut extended_env) {
+                Ok(Object::Return(value)) => Ok(*value),
+                other => other,
+            }
+        },
+        Object::BuiltIn(built_in_function) => {
+            // TODO: Remove this clone and figure out references here.
+            built_in_function(args.clone())
+        },
         // TODO: Make this a more specific error.
-        Err(EvalError::UnknownError)
+        _ => Err(EvalError::UnknownError),
     }
 }

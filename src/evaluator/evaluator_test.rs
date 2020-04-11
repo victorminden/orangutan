@@ -236,3 +236,21 @@ fn function_application_test() {
     }
 }
 
+#[test]
+fn builtin_function_test() {
+    let tests = vec![
+        ("len(\"\")", 0),
+        ("len(\"four\")", 4),
+        ("len(\"hello world\")", 11),
+        ("magic_number(1,2,3)", 42),
+    ];
+
+    for (input, want) in tests {
+        let evaluated = eval_test(input);
+        match evaluated {
+            Ok(Object::Integer(got)) => assert_eq!(got, want),
+            _ => panic!("Did not get Object::Integer!"),
+        }
+    }
+}
+
