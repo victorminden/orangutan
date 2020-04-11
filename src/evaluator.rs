@@ -1,12 +1,16 @@
+#[cfg(test)]
+mod evaluator_test;
+
 use std::fmt;
 use crate::ast::{Program, Statement, BlockStatement, Expression};
-use crate::object::Object;
+use crate::object::{Object, Environment};
 use crate::token::Token;
 
 pub enum EvalError {
     UnknownError,
     UnknownPrefixOperator(Token),
     UnknownInfixOperator(Token),
+    UnknownIdentifier(String),
     InfixTypeMismatch(Object, Token, Object),
     PrefixTypeMismatch(Token, Object),
 }
@@ -26,15 +30,18 @@ impl fmt::Display for EvalError {
             EvalError::PrefixTypeMismatch(token, _) => {
                 write!(f, "EvalError: Type mismatch for prefix operator `{}`", token)
             },
+            EvalError::UnknownIdentifier(name) => {
+                write!(f, "EvalError: Unknown identifier`{}`", name)
+            },
             EvalError::UnknownError => write!(f, "EvalError: UnknownError!"),
         }
     }
 }
 
-pub fn eval(p: &Program) -> Result<Object, EvalError> {
+pub fn eval(p: &Program, env: &mut Environment) -> Result<Object, EvalError> {
     let mut result = Object::Null;
     for statement in &p.statements {
-        result = eval_statement(statement)?;
+        result = eval_statement(statement, env)?;
         if let Object::Return(value) = result {
             return Ok(*value);
         }
@@ -42,10 +49,11 @@ pub fn eval(p: &Program) -> Result<Object, EvalError> {
     return Ok(result);
 }
 
-pub fn eval_block_statement(bs: &BlockStatement) -> Result<Object, EvalError> {
+pub fn eval_block_statement(
+    bs: &BlockStatement, env: &mut Environment) -> Result<Object, EvalError> {
     let mut result = Object::Null;
     for statement in &bs.statements {
-        result = eval_statement(statement)?;
+        result = eval_statement(statement, env)?;
         if let Object::Return(_) = result {
             return Ok(result);
         }
@@ -53,49 +61,69 @@ pub fn eval_block_statement(bs: &BlockStatement) -> Result<Object, EvalError> {
     return Ok(result);
 }
 
-fn eval_statement(s: &Statement) -> Result<Object, EvalError> {
+fn eval_statement(s: &Statement, env: &mut Environment) -> Result<Object, EvalError> {
     match s {
-        Statement::Expression(expr) => eval_expression(&expr),
+        Statement::Expression(expr) => eval_expression(&expr, env),
         Statement::Return(expr) => {
-            Ok(Object::Return(Box::new(eval_expression(&expr)?)))
+            Ok(Object::Return(Box::new(eval_expression(&expr, env)?)))
         },
-        _ => Err(EvalError::UnknownError),
+        Statement::Let(ident, expr) => {
+            let result = eval_expression(&expr, env);
+            match result {
+                Err(_) => result,
+                Ok(object) => {
+                    env.set(ident, object);
+                    Ok(Object::Null)
+                }
+            }
+        },
     }
 }
 
-fn eval_expression(e: &Expression) -> Result<Object, EvalError> {
+fn eval_expression(e: &Expression, env: &mut Environment) -> Result<Object, EvalError> {
     match e {
         Expression::IntegerLiteral(value) => Ok(Object::Integer(*value)),
         Expression::BooleanLiteral(value) => Ok(Object::Boolean(*value)),
         Expression::Prefix(operator, expr) => {
-            eval_prefix_expression(operator, expr)
+            eval_prefix_expression(operator, expr, env)
         },
         Expression::Infix(left, operator, right) => {
-            eval_infix_expression(left, operator, right)
+            eval_infix_expression(left, operator, right, env)
         },
         Expression::If(condition, consequence, alternative) => {
-            eval_if_expression(condition, consequence, alternative)
+            eval_if_expression(condition, consequence, alternative, env)
         },
+        Expression::Ident(name) => eval_identifier(name, env),
         _ => Err(EvalError::UnknownError),
+    }
+}
+
+fn eval_identifier(
+    name: &String, env: &mut Environment) -> Result<Object, EvalError> {
+    if let Some(obj) = env.get(name) {
+        Ok(obj.clone())
+    } else {
+        Err(EvalError::UnknownIdentifier(name.clone()))
     }
 }
 
 fn eval_if_expression(
     condition: &Expression, 
     consequence: &BlockStatement, 
-    alternative: &Option<BlockStatement>) -> Result<Object, EvalError> {
-        if eval_expression(condition)?.is_truthy() {
-            return eval_block_statement(consequence);
+    alternative: &Option<BlockStatement>,
+    env: &mut Environment) -> Result<Object, EvalError> {
+        if eval_expression(condition, env)?.is_truthy() {
+            return eval_block_statement(consequence, env);
         }
         if let Some(bs) = alternative {
-            return eval_block_statement(bs);
+            return eval_block_statement(bs, env);
         }
         return Ok(Object::Null);
     }
 
 fn eval_prefix_expression(
-    prefix: &Token, right: &Expression) -> Result<Object, EvalError> {
-    let obj = eval_expression(right)?;
+    prefix: &Token, right: &Expression, env: &mut Environment) -> Result<Object, EvalError> {
+    let obj = eval_expression(right, env)?;
     match prefix {
         Token::Bang => Ok(Object::Boolean(!obj.is_truthy())),
         Token::Minus => {
@@ -110,9 +138,9 @@ fn eval_prefix_expression(
 }
 
 fn eval_infix_expression(
-    left: &Expression, op: &Token, right: &Expression) -> Result<Object, EvalError> {
-    let left_obj = eval_expression(left)?;
-    let right_obj = eval_expression(right)?;
+    left: &Expression, op: &Token, right: &Expression, env: &mut Environment) -> Result<Object, EvalError> {
+    let left_obj = eval_expression(left, env)?;
+    let right_obj = eval_expression(right, env)?;
 
     match (left_obj, right_obj) {
         (Object::Integer(left), Object::Integer(right)) => {
@@ -153,156 +181,4 @@ fn eval_integer_infix_expression(
         },
     };
     Ok(obj)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::parser::Parser;
-    use crate::lexer::Lexer;
-
-    fn eval_test(input: &str) -> Result<Object, EvalError> {
-        let mut parser = Parser::new(Lexer::new(input));
-        
-        match parser.parse_program() {
-            Ok(program) => eval(&program),
-            _ => panic!("Input could not be parsed!"),
-        }
-    }
-
-    #[test]
-    fn eval_integer_expression_test() {
-        let tests = vec![
-            ("5", 5),
-            ("10", 10),
-            ("-5", -5),
-            ("-10", -10),
-            ("5 + 5 + 5 + 5 - 10", 10),
-            ("2 * 2 * 2 * 2 * 2", 32),
-            ("-50 + 100 + -50", 0),
-            ("5 * 2 + 10", 20),
-            ("5 + 2 * 10", 25),
-            ("20 + 2 * -10", 0),
-            ("50 / 2 * 2 + 10", 60),
-            ("2 * (5 + 10)", 30),
-            ("3 * 3 * 3 + 10", 37),
-            ("3 * (3 * 3) + 10", 37),
-            ("(5 + 10 * 2 + 15 / 3) * 2 + -10", 50),
-        ];
-    
-        for (input, want) in tests {
-            let evaluated = eval_test(input);
-            match evaluated {
-                Ok(Object::Integer(got)) => assert_eq!(got, want),
-                _ => panic!("Did not get Object::Integer!"),
-            }
-        }
-    }
-
-    #[test]
-    fn eval_boolean_expression_test() {
-        let tests = vec![
-            ("true", true),
-            ("false", false),
-            ("true == true", true),
-            ("true == false", false),
-            ("true != true", false),
-            ("true != false", true),
-            ("(1<2) == true", true),
-        ];
-    
-        for (input, want) in tests {
-            let evaluated = eval_test(input);
-            match evaluated {
-                Ok(Object::Boolean(got)) => assert_eq!(got, want),
-                _ => panic!("Did not get Object::Boolean!"),
-            }
-        }
-    }
-
-    #[test]
-    fn bang_operator_test() {
-        let tests = vec![
-            ("!true", false),
-            ("!false", true),
-            ("!!true", true),
-            ("!!false", false),
-            ("!5", false),
-            ("5 < 3", false),
-            ("5 == 5", true),
-            ("1 > 2", false),
-            ("1 != 1", false),
-        ];
-    
-        for (input, want) in tests {
-            let evaluated = eval_test(input);
-            match evaluated {
-                Ok(Object::Boolean(got)) => assert_eq!(got, want),
-                _ => panic!("Did not get Object::Boolean!"),
-            }
-        }
-    }
-
-    #[test]
-    fn if_else_expression_test() {
-        // Use -1 as a placeholder to indicate a Null return.
-        let tests = vec![
-            ("if (true) { 10 }", 10),
-            ("if (false) { 10 }", -1),
-            ("if (1) { 10 }", 10),
-            ("if (1 < 2) { 10 }", 10),
-            ("if (1 > 2) { 10 }", -1),
-            ("if (1 > 2) { 10 } else { 20 }", 20),
-            ("if (1 < 2) { 10 } else { 20 }", 10),
-        ];
-    
-        for (input, want) in tests {
-            let evaluated = eval_test(input);
-            match evaluated {
-                Ok(Object::Integer(got)) => assert_eq!(got, want),
-                Ok(Object::Null) => assert_eq!(want, -1),
-                _ => panic!("Did not get Object::Integer or Object::Null!"),
-            }
-        }
-    }
-
-    #[test]
-    fn return_test() {
-        let tests = vec![
-            ("return 10;", 10),
-            ("return 10; 9;", 10),
-            ("return 2 * 5; 9;", 10),
-            ("9; return 2 * 5; 9;", 10),
-            ("if (10 > 1) {
-                if (10 > 1) {
-                  return 10;
-                }
-              return 1;
-              }", 10),
-        ];
-    
-        for (input, want) in tests {
-            let evaluated = eval_test(input);
-            match evaluated {
-                Ok(Object::Integer(got)) => assert_eq!(got, want),
-                _ => panic!("Did not get Object::Integer!"),
-            }
-        }
-    }
-    #[test]
-    fn errors_test() {
-        let tests = vec![
-            ("5 + true;", "EvalError: Type mismatch for infix operator `+`"),
-            ("5 + true; 5", "EvalError: Type mismatch for infix operator `+`"),
-            ("-true;", "EvalError: Type mismatch for prefix operator `-`"),
-        ];
-    
-        for (input, want) in tests {
-            let evaluated = eval_test(input);
-            match evaluated {
-                Err(got) => assert_eq!(got.to_string(), want),
-                _ => panic!("Did not get EvalError!"),
-            }
-        }
-    }
 }

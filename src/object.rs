@@ -1,6 +1,9 @@
-use std::fmt;
+mod environment;
 
-#[derive(Debug)]
+use std::fmt;
+pub use self::environment::*;
+
+#[derive(Debug, Clone)]
 pub enum Object {
     Null,
     Integer(i64),

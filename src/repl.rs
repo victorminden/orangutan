@@ -1,6 +1,7 @@
 use crate::lexer;
 use crate::parser;
 use crate::evaluator;
+use crate::object::Environment;
 use std::io;
 use std::io::Write;
 
@@ -23,6 +24,8 @@ pub fn start() -> io::Result<()> {
     println!("Welcome to the Monkey programming language!");
     println!("{}", MONKEY_FACE);
     println!("Feel free to type in commands");
+
+    let mut env = Environment::new();
     loop {
         print!("{}", PROMPT);
         io::stdout().flush()?;
@@ -39,7 +42,7 @@ pub fn start() -> io::Result<()> {
             }
         };
 
-        match evaluator::eval(&program) {
+        match evaluator::eval(&program, &mut env) {
             Ok(evaluated) => println!("{}", evaluated),
             Err(error) => {
                 println!("Error encountered while evaluating the input!");
