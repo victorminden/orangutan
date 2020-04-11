@@ -33,7 +33,9 @@ impl<'a> Parser<'a> {
             match self.parse_statement() {
                 Ok(statement) => statements.push(statement),
                 Err(error) => {
-                    self.errors.push(error);
+                    self.errors.push(error.clone());
+                    // For debugging, we can remove the error return.
+                    return Err(error);
                 }
             }
         }
@@ -52,13 +54,13 @@ impl<'a> Parser<'a> {
         // Check the variant of the enum without the value.
         let got = self.lexer.next_token();
         if std::mem::discriminant(&got) == std::mem::discriminant(&expected) {
-               return Ok(());
+            return Ok(());
         } 
-        
         match expected {
             Token::Let => Err(ParseError::ExpectedLet(got)),
             Token::Assign => Err(ParseError::ExpectedAssign(got)),
             Token::RParen => Err(ParseError::ExpectedRParen(got)),
+            Token::Semicolon => Err(ParseError::ExpectedSemicolon(got)),
             _ => Err(ParseError::UnknownError),
         }
 

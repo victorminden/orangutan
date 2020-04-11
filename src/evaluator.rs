@@ -31,7 +31,7 @@ impl fmt::Display for EvalError {
                 write!(f, "EvalError: Type mismatch for prefix operator `{}`", token)
             },
             EvalError::UnknownIdentifier(name) => {
-                write!(f, "EvalError: Unknown identifier`{}`", name)
+                write!(f, "EvalError: Unknown identifier `{}`", name)
             },
             EvalError::UnknownError => write!(f, "EvalError: UnknownError!"),
         }

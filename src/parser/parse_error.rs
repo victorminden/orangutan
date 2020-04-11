@@ -1,7 +1,7 @@
 use std::fmt;
 use crate::token::Token;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ParseError {
     UnexpectedToken(Token),
     ExpectedIdent(Token),
@@ -11,6 +11,7 @@ pub enum ParseError {
     ExpectedBoolean(Token),
     ExpectedPrefix(Token),
     ExpectedRParen(Token),
+    ExpectedSemicolon(Token),
     UnknownError,
 }
 
@@ -28,6 +29,7 @@ impl fmt::Display for ParseError {
             ParseError::ExpectedBoolean(token) => expected_x_got_y(f, "boolean", token),
             ParseError::ExpectedPrefix(token) => expected_x_got_y(f, "prefix", token),
             ParseError::ExpectedRParen(token) => expected_x_got_y(f, "(", token),
+            ParseError::ExpectedSemicolon(token) => expected_x_got_y(f, ";", token),
             ParseError::UnexpectedToken(token) => write!(f, "ParseError: UnexpectedToken `{}`!", token),
             ParseError::UnknownError => write!(f, "ParseError: UnknownError!"),
         }
