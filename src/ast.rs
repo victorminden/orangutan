@@ -60,6 +60,7 @@ pub enum Expression {
     If(Box<Expression>, BlockStatement, Option<BlockStatement>),
     FunctionLiteral(Vec<String>, BlockStatement),
     Call(Box<Expression>, Vec<Expression>),
+    ArrayLiteral(Vec<Expression>),
 }
 
 impl fmt::Display for Expression {
@@ -87,6 +88,10 @@ impl fmt::Display for Expression {
                 // Map the vector of expressions to a vector of strings so we can join them with comma.
                 write!(f, "{}({})", function, 
                     arguments.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(", "))
+            },
+            Expression::ArrayLiteral(elements) => {
+                write!(f, "[{}]",
+                    elements.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(", "))
             },
         }
     }

@@ -157,6 +157,20 @@ impl<'a> Parser<'a> {
         Ok(parameters)
     }
 
+    fn parse_array_elements(&mut self) -> Result<Vec<Expression>, ParseError> {
+        // TODO: deduplicate this code with the same code used for lists of statements.
+        let mut elements = Vec::new();
+
+        if *self.lexer.peek_token() != Token::RBracket {
+            elements.push(self.parse_expression(Precedence::Lowest)?);
+        }
+        while *self.lexer.peek_token() == Token::Comma {
+            self.lexer.next_token();
+            elements.push(self.parse_expression(Precedence::Lowest)?);
+        }
+        Ok(elements)
+    }
+
     fn parse_function_literal(&mut self) -> Result<Expression, ParseError> {
         self.expect_peek(Token::Function)?;
         self.expect_peek(Token::LParen)?;
@@ -164,6 +178,13 @@ impl<'a> Parser<'a> {
         self.expect_peek(Token::RParen)?;
         let body = self.parse_block_statement()?;
         Ok(Expression::FunctionLiteral(parameters, body))
+    }
+
+    fn parse_array_literal(&mut self) -> Result<Expression, ParseError> {
+        self.expect_peek(Token::LBracket)?;
+        let elements = self.parse_array_elements()?;
+        self.expect_peek(Token::RBracket)?;
+        Ok(Expression::ArrayLiteral(elements))
     }
 
     fn parse_string_literal(&mut self) -> Result<Expression, ParseError> {
@@ -184,6 +205,7 @@ impl<'a> Parser<'a> {
             Token::LParen => self.parse_grouped_expression()?,
             Token::If => self.parse_if_expression()?,
             Token::Function => self.parse_function_literal()?,
+            Token::LBracket => self.parse_array_literal()?,
             _ => { 
                 let other = self.lexer.next_token();
                 return Err(ParseError::UnexpectedToken(other)); 
