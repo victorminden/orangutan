@@ -157,18 +157,17 @@ impl<'a> Parser<'a> {
         Ok(parameters)
     }
 
-    fn parse_array_elements(&mut self) -> Result<Vec<Expression>, ParseError> {
-        // TODO: deduplicate this code with the same code used for lists of statements.
-        let mut elements = Vec::new();
+    fn parse_expression_list(&mut self, end_token: Token) -> Result<Vec<Expression>, ParseError> {
+        let mut expressions = Vec::new();
 
-        if *self.lexer.peek_token() != Token::RBracket {
-            elements.push(self.parse_expression(Precedence::Lowest)?);
+        if *self.lexer.peek_token() != end_token {
+            expressions.push(self.parse_expression(Precedence::Lowest)?);
         }
         while *self.lexer.peek_token() == Token::Comma {
             self.lexer.next_token();
-            elements.push(self.parse_expression(Precedence::Lowest)?);
+            expressions.push(self.parse_expression(Precedence::Lowest)?);
         }
-        Ok(elements)
+        Ok(expressions)
     }
 
     fn parse_function_literal(&mut self) -> Result<Expression, ParseError> {
@@ -182,7 +181,7 @@ impl<'a> Parser<'a> {
 
     fn parse_array_literal(&mut self) -> Result<Expression, ParseError> {
         self.expect_peek(Token::LBracket)?;
-        let elements = self.parse_array_elements()?;
+        let elements = self.parse_expression_list(Token::RBracket)?;
         self.expect_peek(Token::RBracket)?;
         Ok(Expression::ArrayLiteral(elements))
     }
@@ -269,14 +268,7 @@ impl<'a> Parser<'a> {
     fn parse_call_expression(
         &mut self, left_expr: Expression) -> Result<Expression, ParseError> {
         self.expect_peek(Token::LParen)?;
-        let mut arguments = vec![];
-        if *self.lexer.peek_token() != Token::RParen {
-            arguments.push(self.parse_expression(Precedence::Lowest)?);
-        }
-        while *self.lexer.peek_token() == Token::Comma {
-            self.lexer.next_token();
-            arguments.push(self.parse_expression(Precedence::Lowest)?);
-        }
+        let arguments = self.parse_expression_list(Token::RParen)?;
         self.expect_peek(Token::RParen)?;
         Ok(Expression::Call(Box::new(left_expr), arguments))
     }
