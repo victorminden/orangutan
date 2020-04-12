@@ -132,7 +132,10 @@ fn eval_expression(e: &Expression, env: &mut Environment) -> Result<Object, Eval
 fn eval_index_expression(array: &Object, index: &Object) -> Result<Object, EvalError> {
     match (&array, &index) {
         (Object::Array(arr), Object::Integer(idx)) => {
-            Ok(arr[*idx as usize].clone())
+            match arr.get(*idx as usize) {
+                Some(obj) => Ok(obj.clone()),
+                None => Ok(Object::Null)
+            }
         },
         _ => Err(EvalError::UnknownError),
     }
