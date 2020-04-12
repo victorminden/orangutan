@@ -242,6 +242,7 @@ fn builtin_function_test() {
         ("len(\"\")", 0),
         ("len(\"four\")", 4),
         ("len(\"hello world\")", 11),
+        ("len([1, 2, 3+3])", 3),
         ("magic_number(1,2,3)", 42),
     ];
 
