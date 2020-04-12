@@ -121,9 +121,20 @@ fn eval_expression(e: &Expression, env: &mut Environment) -> Result<Object, Eval
             let elements = eval_expressions(items, env)?;
             Ok(Object::Array(elements))
         },
-        Expression::Index(_, _) => {
-            Err(EvalError::UnknownError)
+        Expression::Index(left, right) => {
+            let arr = eval_expression(&**left, env)?;
+            let idx = eval_expression(&**right, env)?;
+            eval_index_expression(&arr, &idx)
         },
+    }
+}
+
+fn eval_index_expression(array: &Object, index: &Object) -> Result<Object, EvalError> {
+    match (&array, &index) {
+        (Object::Array(arr), Object::Integer(idx)) => {
+            Ok(arr[*idx as usize].clone())
+        },
+        _ => Err(EvalError::UnknownError),
     }
 }
 

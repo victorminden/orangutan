@@ -272,3 +272,24 @@ fn array_test() {
         }
     }
 }
+
+#[test]
+fn array_index_test() {
+    let tests = vec![
+        ("[1, 2, 3][0]", 1),
+        ("[1, 2, 3][1]", 2),
+        ("[1, 2, 3][2]", 3),
+        ("let i = 0; [1][i]", 1),
+        ("[1, 2, 3][1 + 1]", 3),
+        ("let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];", 6),
+        ("let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]", 2),
+    ];
+
+    for (input, want) in tests {
+        let evaluated = eval_test(input);
+        match evaluated {
+            Ok(Object::Integer(got)) => assert_eq!(got, want),
+            _ => panic!("Did not get Object::Integer!"),
+        }
+    }
+}
