@@ -117,8 +117,9 @@ fn eval_expression(e: &Expression, env: &mut Environment) -> Result<Object, Eval
             let args = eval_expressions(arguments, env)?;
             apply_function(&function, &args)
         },
-        Expression::ArrayLiteral(_) => {
-            Err(EvalError::UnknownError)
+        Expression::ArrayLiteral(items) => {
+            let elements = eval_expressions(items, env)?;
+            Ok(Object::Array(elements))
         },
         Expression::Index(_, _) => {
             Err(EvalError::UnknownError)

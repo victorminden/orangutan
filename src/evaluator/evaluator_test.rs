@@ -254,3 +254,21 @@ fn builtin_function_test() {
     }
 }
 
+#[test]
+fn array_test() {
+    let tests = vec![
+        ("[1, 2*2, 3+3]", "[1, 4, 6]"),
+    ];
+
+    for (input, want) in tests {
+        let evaluated = eval_test(input);
+        match evaluated {
+            Ok(Object::Array(_)) => {
+                if let Ok(obj) = evaluated {
+                    assert_eq!(obj.to_string(), want)
+                }
+            },
+            _ => panic!("Did not get Object::Array!"),
+        }
+    }
+}

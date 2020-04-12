@@ -17,6 +17,7 @@ pub enum Object {
     Return(Box<Object>),
     Function(Vec<String>, BlockStatement, Environment),
     BuiltIn(BuiltInFunction),
+    Array(Vec<Object>),
 }
 
 impl fmt::Display for Object {
@@ -31,6 +32,10 @@ impl fmt::Display for Object {
                 write!(f, "fn({}) {}", parameters.join(", "), body)
             },
             Object::BuiltIn(_) => write!(f, "Built-In function"),
+            Object::Array(items) => {
+                write!(f, "[{}]",
+                    items.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(", "))
+            }
         }
     }
 }
