@@ -52,6 +52,8 @@ impl<'a> Lexer<'a> {
             Some('+') => Token::Plus,
             Some('{') => Token::LBrace,
             Some('}') => Token::RBrace,
+            Some('[') => Token::LBracket,
+            Some(']') => Token::RBracket,
             Some('-') => Token::Minus,
             Some('/') => Token::Slash,
             Some('*') => Token::Asterisk,
@@ -181,7 +183,8 @@ mod tests {
         1 != 2
         1 == 1
         \"foobar\"
-        \"foo bar\"";
+        \"foo bar\"
+        [1, 2];";
         let tests = vec![
             Token::Let,
             Token::Ident(String::from("five")),
@@ -244,6 +247,12 @@ mod tests {
             Token::Integer(1),
             Token::Str(String::from("foobar")),
             Token::Str(String::from("foo bar")),
+            Token::LBracket,
+            Token::Integer(1),
+            Token::Comma,
+            Token::Integer(2),
+            Token::RBracket,
+            Token::Semicolon,
             Token::EndOfFile,
         ];
         let mut line = Lexer::new(sample_input);
