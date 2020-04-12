@@ -61,6 +61,7 @@ pub enum Expression {
     FunctionLiteral(Vec<String>, BlockStatement),
     Call(Box<Expression>, Vec<Expression>),
     ArrayLiteral(Vec<Expression>),
+    Index(Box<Expression>, Box<Expression>),
 }
 
 impl fmt::Display for Expression {
@@ -93,6 +94,9 @@ impl fmt::Display for Expression {
                 write!(f, "[{}]",
                     elements.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(", "))
             },
+            Expression::Index(arr, idx) => {
+                write!(f, "({}[{}])", arr, idx)
+            }
         }
     }
 }

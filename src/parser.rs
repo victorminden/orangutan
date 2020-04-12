@@ -223,10 +223,18 @@ impl<'a> Parser<'a> {
                     Token::LessThan |
                     Token::GreaterThan => self.parse_infix_expression(expr)?,
                     Token::LParen => self.parse_call_expression(expr)?,
+                    Token::LBracket => self.parse_index_expression(expr)?,
                     _ => { return Ok(expr); },
                 };
         }
         Ok(expr)
+    }
+
+    fn parse_index_expression(&mut self, left_expr: Expression) -> Result<Expression, ParseError> {
+        self.expect_peek(Token::LBracket)?;
+        let right_expr = self.parse_expression(Precedence::Lowest)?;
+        self.expect_peek(Token::RBracket)?;
+        Ok(Expression::Index(Box::new(left_expr), Box::new(right_expr)))
     }
 
     fn parse_identifier_string(&mut self) -> Result<String, ParseError> {

@@ -120,6 +120,9 @@ fn eval_expression(e: &Expression, env: &mut Environment) -> Result<Object, Eval
         Expression::ArrayLiteral(_) => {
             Err(EvalError::UnknownError)
         },
+        Expression::Index(_, _) => {
+            Err(EvalError::UnknownError)
+        },
     }
 }
 

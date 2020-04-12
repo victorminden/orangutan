@@ -237,6 +237,8 @@ fn operator_precedence_test() -> Result<(), ParseError> {
     a + add(b * c) + d
     add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))
     add(a + b + c * d / f + g)
+    a * [1, 2, 3, 4][b * c] * d
+    add(a * b[2], b[1], 2 * [1, 2][1])
     ";
     
     let expected = vec![
@@ -258,6 +260,8 @@ fn operator_precedence_test() -> Result<(), ParseError> {
         "((a + add((b * c))) + d);",
         "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)));",
         "add((((a + b) + ((c * d) / f)) + g));",
+        "((a * ([1, 2, 3, 4][(b * c)])) * d);",
+        "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])));",
     ];
 
     let mut parser = Parser::new(Lexer::new(input));
@@ -428,12 +432,33 @@ fn string_literal_statement_test() -> Result<(), ParseError> {
 #[test]
 fn array_literal_statement_test() -> Result<(), ParseError> {
     let input = "
-    [1, 2]
+    [1, 2];
     [1, 2*2, 3+3]";
     
     let expected = vec![
     "[1, 2];",
     "[1, (2 * 2), (3 + 3)];",
+    ];
+
+    let mut parser = Parser::new(Lexer::new(input));
+    let program = parser.parse_program()?;
+    parser.print_errors();
+    assert_eq!(program.statements.len(), expected.len());
+
+    for (expected, statement) in 
+    expected.iter().zip(program.statements.iter()) {
+        assert_eq!(&statement.to_string(), expected);
+    }
+
+    Ok(())
+}
+
+#[test]
+fn array_index_statement_test() -> Result<(), ParseError> {
+    let input = "myArray[1+1]";
+    
+    let expected = vec![
+    "(myArray[(1 + 1)]);",
     ];
 
     let mut parser = Parser::new(Lexer::new(input));
