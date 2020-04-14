@@ -244,13 +244,35 @@ fn builtin_function_test() {
         ("len(\"hello world\")", 11),
         ("len([1, 2, 3+3])", 3),
         ("magic_number(1,2,3)", 42),
+        ("first([3, 2, 1])", 3),
+        ("first([])", -1),
+        ("last([3, 2, 1+5])", 6),
+        ("last([])", -1),
     ];
 
     for (input, want) in tests {
         let evaluated = eval_test(input);
         match evaluated {
             Ok(Object::Integer(got)) => assert_eq!(got, want),
+            Ok(Object::Null) => assert_eq!(want, -1),
             _ => panic!("Did not get Object::Integer!"),
+        }
+    }
+}
+
+#[test]
+fn rest_test() {
+    let tests = vec![
+        ("rest([1, 2, 3])", "[2, 3]"),
+        ("rest([])", "")
+    ];
+
+    for (input, want) in tests {
+        let evaluated = eval_test(input);
+        match evaluated {
+            Ok(Object::Array(_)) => assert_eq!(evaluated.unwrap().to_string(), want),
+            Ok(Object::Null) => assert_eq!(want, ""),
+            _ => panic!("Did not get Object::Array!"),
         }
     }
 }

@@ -2,6 +2,7 @@ use std::fmt;
 use crate::token::Token;
 use crate::object::Object;
 
+#[derive(Debug)]
 pub enum EvalError {
     UnknownError,
     UnknownPrefixOperator(Token),
