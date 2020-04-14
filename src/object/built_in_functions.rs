@@ -21,6 +21,6 @@ fn len(params: Vec<Object>) -> Result<Object, EvalError> {
     match &params[0] {
         Object::Str(string) => Ok(Object::Integer(string.len() as i64)),
         Object::Array(arr) => Ok(Object::Integer(arr.len() as i64)),
-        _ => Err(EvalError::UnknownError),
+        _ => Err(EvalError::UnsupportedInputToBuiltIn),
     }
 }

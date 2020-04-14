@@ -1,47 +1,10 @@
 #[cfg(test)]
 mod evaluator_test;
-
-use std::fmt;
+mod eval_error;
+pub use self::eval_error::{EvalError};
 use crate::ast::{Program, Statement, BlockStatement, Expression};
 use crate::object::{Object, Environment, get_built_in};
 use crate::token::Token;
-
-pub enum EvalError {
-    UnknownError,
-    UnknownPrefixOperator(Token),
-    UnknownInfixOperator(Token),
-    UnknownIdentifier(String),
-    InfixTypeMismatch(Object, Token, Object),
-    PrefixTypeMismatch(Token, Object),
-    WrongNumberOfArguments(u32, u32),
-}
-
-impl fmt::Display for EvalError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            EvalError::UnknownPrefixOperator(token) => {
-                write!(f, "EvalError: Unknown prefix operator `{}`", token)
-            },
-            EvalError::UnknownInfixOperator(token) => {
-                write!(f, "EvalError: Unknown infix operator `{}`", token)
-            },
-            EvalError::InfixTypeMismatch(_, token, _) => {
-                write!(f, "EvalError: Type mismatch for infix operator `{}`", token)
-            },
-            EvalError::PrefixTypeMismatch(token, _) => {
-                write!(f, "EvalError: Type mismatch for prefix operator `{}`", token)
-            },
-            EvalError::UnknownIdentifier(name) => {
-                write!(f, "EvalError: Unknown identifier `{}`", name)
-            },
-            EvalError::WrongNumberOfArguments(got, want) => {
-                write!(f, "EvalError: Wrong number of parameters (got: {}, want: {}",
-                got, want)
-            }
-            EvalError::UnknownError => write!(f, "EvalError: UnknownError!"),
-        }
-    }
-}
 
 pub fn eval(p: &Program, env: &mut Environment) -> Result<Object, EvalError> {
     let mut result = Object::Null;
