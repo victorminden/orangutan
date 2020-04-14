@@ -7,6 +7,7 @@ pub fn get_built_in(name: &str) -> Option<&Object> {
         "first" => Some(&Object::BuiltIn(first)),
         "last" => Some(&Object::BuiltIn(last)),
         "rest" => Some(&Object::BuiltIn(rest)),
+        "push" => Some(&Object::BuiltIn(push)),
         "magic_number" => Some(&Object::BuiltIn(magic_number)),
         _ => None,
     }
@@ -75,6 +76,20 @@ fn rest(params: Vec<Object>) -> Result<Object, EvalError> {
             } else {
                 Ok(Object::Null)
             }
+        },
+        _ => Err(EvalError::UnsupportedInputToBuiltIn),
+    }
+}
+
+fn push(params: Vec<Object>) -> Result<Object, EvalError> {
+    if params.len() != 2 {
+        return Err(EvalError::WrongNumberOfArguments(params.len() as u32, 2));
+    }
+    match &params[0] {
+        Object::Array(arr) => {
+            let mut new_arr = arr.clone();
+            new_arr.push(params[1].clone());
+            Ok(Object::Array(new_arr))
         },
         _ => Err(EvalError::UnsupportedInputToBuiltIn),
     }

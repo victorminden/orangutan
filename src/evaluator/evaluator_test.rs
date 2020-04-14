@@ -278,6 +278,23 @@ fn rest_test() {
 }
 
 #[test]
+fn push_test() {
+    let tests = vec![
+        ("push([1, 2, 3], 4)", "[1, 2, 3, 4]"),
+        ("push([], [])", "[[]]")
+    ];
+
+    for (input, want) in tests {
+        let evaluated = eval_test(input);
+        match evaluated {
+            Ok(Object::Array(_)) => assert_eq!(evaluated.unwrap().to_string(), want),
+            Ok(Object::Null) => assert_eq!(want, ""),
+            _ => panic!("Did not get Object::Array!"),
+        }
+    }
+}
+
+#[test]
 fn array_test() {
     let tests = vec![
         ("[1, 2*2, 3+3]", "[1, 4, 6]"),
