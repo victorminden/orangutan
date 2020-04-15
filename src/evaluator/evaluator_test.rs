@@ -3,12 +3,15 @@ use super::*;
 use crate::parser::Parser;
 use crate::lexer::Lexer;
 use crate::object::Environment;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 fn eval_test(input: &str) -> Result<Object, EvalError> {
     let mut parser = Parser::new(Lexer::new(input));
-    let mut env = Environment::new();
+    let env = 
+        Rc::new(RefCell::new(Environment::new()));
     match parser.parse_program() {
-        Ok(program) => eval(&program, &mut env),
+        Ok(program) => eval(&program, env),
         _ => panic!("Input could not be parsed!"),
     }
 }
@@ -215,7 +218,7 @@ fn function_test() {
         }
     }
 }
-
+ 
 #[test]
 fn function_application_test() {
     let tests = vec![
@@ -224,6 +227,7 @@ fn function_application_test() {
         ("let double = fn(x) { x * 2; }; double(5);", 10),
         ("let add = fn(x, y) { x + y; }; add(5, 5);", 10),
         ("let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20),
+        ("let twice = fn(x) { if (x>0) { twice(x-1) } else {12} }; twice(1)", 12),
         ("fn(x) { x; }(5)", 5),
     ];
 
@@ -333,5 +337,32 @@ fn array_index_test() {
             Ok(Object::Null) => assert_eq!(want, -1),
             _ => panic!("Did not get Object::Integer!"),
         }
+    }
+}
+
+#[test]
+fn extended_function_test() {
+    let input = "
+    let map = fn(arr, f) {
+        let iter = fn(arr, accumulated) {
+            if (len(arr) == 0) {
+                return accumulated;
+            } else {
+                return iter(rest(arr), push(accumulated, f(first(arr))));
+            }
+        };
+        return iter(arr, []);
+    };
+    let a = [1, 2, 3, 4];
+    let double = fn(x) { x * 2 };
+    map(a, double);";
+    let evaluated = eval_test(input);
+    match evaluated { 
+        Ok(Object::Array(_)) => {
+            if let Ok(obj) = evaluated {
+                assert_eq!(obj.to_string(), "[2, 4, 6, 8]")
+            }
+        },
+        _ => panic!("Did not get Object::Array!"),
     }
 }

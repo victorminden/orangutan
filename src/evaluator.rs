@@ -3,13 +3,15 @@ mod evaluator_test;
 mod eval_error;
 pub use self::eval_error::{EvalError};
 use crate::ast::{Program, Statement, BlockStatement, Expression};
-use crate::object::{Object, Environment, get_built_in};
+use crate::object::{Object, SharedEnvironment, get_built_in};
 use crate::token::Token;
+use std::rc::Rc;
+use std::cell::RefCell;
 
-pub fn eval(p: &Program, env: &mut Environment) -> Result<Object, EvalError> {
+pub fn eval(p: &Program, env: SharedEnvironment) -> Result<Object, EvalError> {
     let mut result = Object::Null;
     for statement in &p.statements {
-        result = eval_statement(statement, env)?;
+        result = eval_statement(statement, Rc::clone(&env))?;
         if let Object::Return(value) = result {
             return Ok(*value);
         }
@@ -18,10 +20,10 @@ pub fn eval(p: &Program, env: &mut Environment) -> Result<Object, EvalError> {
 }
 
 pub fn eval_block_statement(
-    bs: &BlockStatement, env: &mut Environment) -> Result<Object, EvalError> {
+    bs: &BlockStatement, env: SharedEnvironment) -> Result<Object, EvalError> {
     let mut result = Object::Null;
     for statement in &bs.statements {
-        result = eval_statement(statement, env)?;
+        result = eval_statement(statement, Rc::clone(&env))?;
         if let Object::Return(_) = result {
             return Ok(result);
         }
@@ -29,18 +31,19 @@ pub fn eval_block_statement(
     return Ok(result);
 }
 
-fn eval_statement(s: &Statement, env: &mut Environment) -> Result<Object, EvalError> {
+fn eval_statement(s: &Statement, env: SharedEnvironment) -> Result<Object, EvalError> {
     match s {
         Statement::Expression(expr) => eval_expression(&expr, env),
         Statement::Return(expr) => {
             Ok(Object::Return(Box::new(eval_expression(&expr, env)?)))
         },
         Statement::Let(ident, expr) => {
-            let result = eval_expression(&expr, env);
+            let result = eval_expression(&expr, Rc::clone(&env));
             match result {
                 Err(_) => result,
                 Ok(object) => {
-                    env.set(ident, object);
+                    // Ugly, unsafe Rust, what to do?
+                    env.borrow_mut().set(ident, object);
                     Ok(Object::Null)
                 }
             }
@@ -49,15 +52,15 @@ fn eval_statement(s: &Statement, env: &mut Environment) -> Result<Object, EvalEr
 }
 
 fn eval_expressions(
-    exprs: &[Expression], env: &mut Environment) -> Result<Vec<Object>, EvalError> {
+    exprs: &[Expression], env: SharedEnvironment) -> Result<Vec<Object>, EvalError> {
     let mut results = vec![];
     for expr in exprs {
-        results.push(eval_expression(expr, env)?);
+        results.push(eval_expression(expr, Rc::clone(&env))?);
     }
     Ok(results)
 }
 
-fn eval_expression(e: &Expression, env: &mut Environment) -> Result<Object, EvalError> {
+fn eval_expression(e: &Expression, env: SharedEnvironment) -> Result<Object, EvalError> {
     match e {
         Expression::IntegerLiteral(value) => Ok(Object::Integer(*value)),
         Expression::StringLiteral(value) => Ok(Object::Str(value.clone())),
@@ -76,7 +79,7 @@ fn eval_expression(e: &Expression, env: &mut Environment) -> Result<Object, Eval
             Ok(Object::Function(parameters.clone(), body.clone(), env.clone()))
         },
         Expression::Call(expr, arguments) => {
-            let function = eval_expression(&**expr, env)?;
+            let function = eval_expression(&**expr, Rc::clone(&env))?;
             let args = eval_expressions(arguments, env)?;
             apply_function(&function, &args)
         },
@@ -85,7 +88,7 @@ fn eval_expression(e: &Expression, env: &mut Environment) -> Result<Object, Eval
             Ok(Object::Array(elements))
         },
         Expression::Index(left, right) => {
-            let arr = eval_expression(&**left, env)?;
+            let arr = eval_expression(&**left, Rc::clone(&env))?;
             let idx = eval_expression(&**right, env)?;
             eval_index_expression(&arr, &idx)
         },
@@ -105,8 +108,8 @@ fn eval_index_expression(array: &Object, index: &Object) -> Result<Object, EvalE
 }
 
 fn eval_identifier(
-    name: &String, env: &mut Environment) -> Result<Object, EvalError> {
-    if let Some(obj) = env.get(name) {
+    name: &String, env: SharedEnvironment) -> Result<Object, EvalError> {
+    if let Some(obj) = env.borrow().get(name) {
         return Ok(obj.clone());
     } 
     if let Some(obj) = get_built_in(name) {
@@ -121,8 +124,8 @@ fn eval_if_expression(
     condition: &Expression, 
     consequence: &BlockStatement, 
     alternative: &Option<BlockStatement>,
-    env: &mut Environment) -> Result<Object, EvalError> {
-        if eval_expression(condition, env)?.is_truthy() {
+    env: SharedEnvironment) -> Result<Object, EvalError> {
+        if eval_expression(condition, Rc::clone(&env))?.is_truthy() {
             return eval_block_statement(consequence, env);
         }
         if let Some(bs) = alternative {
@@ -132,7 +135,7 @@ fn eval_if_expression(
     }
 
 fn eval_prefix_expression(
-    prefix: &Token, right: &Expression, env: &mut Environment) -> Result<Object, EvalError> {
+    prefix: &Token, right: &Expression, env: SharedEnvironment) -> Result<Object, EvalError> {
     let obj = eval_expression(right, env)?;
     match prefix {
         Token::Bang => Ok(Object::Boolean(!obj.is_truthy())),
@@ -148,9 +151,9 @@ fn eval_prefix_expression(
 }
 
 fn eval_infix_expression(
-    left: &Expression, op: &Token, right: &Expression, env: &mut Environment) -> Result<Object, EvalError> {
-    let left_obj = eval_expression(left, env)?;
-    let right_obj = eval_expression(right, env)?;
+    left: &Expression, op: &Token, right: &Expression, env: SharedEnvironment) -> Result<Object, EvalError> {
+    let left_obj = eval_expression(left, Rc::clone(&env))?;
+    let right_obj = eval_expression(right, Rc::clone(&env))?;
 
     match (left_obj, right_obj) {
         (Object::Integer(left), Object::Integer(right)) => {
@@ -209,12 +212,13 @@ fn apply_function(
                     parameters.len() as u32, args.len() as u32));
             }
             // Build environment for function.
-            let mut extended_env = env.clone();
+            let extended_env = 
+            Rc::new(RefCell::new(env.borrow().clone()));
             for (p, a) in parameters.iter().zip(args) {
-                extended_env.set(p, a.clone())
+                extended_env.borrow_mut().set(p, a.clone())
             }
             // Evaluate the function with this environment.
-            match eval_block_statement(body, &mut extended_env) {
+            match eval_block_statement(body, Rc::clone(&extended_env)) {
                 Ok(Object::Return(value)) => Ok(*value),
                 other => other,
             }

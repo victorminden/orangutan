@@ -2,12 +2,16 @@ mod environment;
 mod built_in_functions;
 
 use std::fmt;
+use std::cell::RefCell;
+use std::rc::Rc;
 pub use self::environment::*;
 pub use self::built_in_functions::*;
 use crate::ast::BlockStatement;
 use crate::evaluator::EvalError;
 
 pub type BuiltInFunction = fn(Vec<Object>) -> Result<Object, EvalError>;
+pub type SharedEnvironment = Rc<RefCell<Environment>>;
+
 #[derive(Debug, Clone)]
 pub enum Object {
     Null,
@@ -15,7 +19,7 @@ pub enum Object {
     Boolean(bool),
     Str(String),
     Return(Box<Object>),
-    Function(Vec<String>, BlockStatement, Environment),
+    Function(Vec<String>, BlockStatement, SharedEnvironment),
     BuiltIn(BuiltInFunction),
     Array(Vec<Object>),
 }

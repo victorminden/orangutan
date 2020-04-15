@@ -2,6 +2,8 @@ use crate::lexer;
 use crate::parser;
 use crate::evaluator;
 use crate::object::Environment;
+use std::rc::Rc;
+use std::cell::RefCell;
 use std::io;
 use std::io::Write;
 
@@ -25,7 +27,7 @@ pub fn start() -> io::Result<()> {
     println!("{}", MONKEY_FACE);
     println!("Feel free to type in commands");
 
-    let mut env = Environment::new();
+    let env = Rc::new(RefCell::new(Environment::new()));
     loop {
         print!("{}", PROMPT);
         io::stdout().flush()?;
@@ -42,7 +44,7 @@ pub fn start() -> io::Result<()> {
             }
         };
 
-        match evaluator::eval(&program, &mut env) {
+        match evaluator::eval(&program, Rc::clone(&env)) {
             Ok(evaluated) => println!("{}", evaluated),
             Err(error) => {
                 println!("Error encountered while evaluating the input!");
