@@ -59,6 +59,7 @@ impl<'a> Lexer<'a> {
             Some('*') => Token::Asterisk,
             Some('<') => Token::LessThan,
             Some('>') => Token::GreaterThan,
+            Some(':') => Token::Colon,
             Some('!') => {
                 if let Some('=') = self.input.peek() {
                     let _ = self.input.next();
@@ -184,7 +185,8 @@ mod tests {
         1 == 1
         \"foobar\"
         \"foo bar\"
-        [1, 2];";
+        [1, 2];
+        {\"foo\": \"bar\"}";
         let tests = vec![
             Token::Let,
             Token::Ident(String::from("five")),
@@ -253,6 +255,11 @@ mod tests {
             Token::Integer(2),
             Token::RBracket,
             Token::Semicolon,
+            Token::LBrace,
+            Token::Str(String::from("foo")),
+            Token::Colon,
+            Token::Str(String::from("bar")),
+            Token::RBrace,
             Token::EndOfFile,
         ];
         let mut line = Lexer::new(sample_input);

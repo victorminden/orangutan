@@ -23,6 +23,7 @@ pub enum Token {
     // Delimiters
     Comma,
     Semicolon,
+    Colon,
     // Groups
     LParen,
     RParen, 
@@ -87,6 +88,7 @@ impl fmt::Display for Token {
             Token::If => write!(f, "if"),
             Token::Else => write!(f, "else"),
             Token::Return => write!(f, "return"),
+            Token::Colon => write!(f, ":"),
         }
     }
 }
