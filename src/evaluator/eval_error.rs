@@ -2,7 +2,6 @@ use std::fmt;
 use crate::token::Token;
 use crate::object::Object;
 
-#[derive(Debug)]
 pub enum EvalError {
     UnknownError,
     UnknownPrefixOperator(Token),
@@ -12,6 +11,7 @@ pub enum EvalError {
     PrefixTypeMismatch(Token, Object),
     WrongNumberOfArguments(u32, u32),
     UnsupportedInputToBuiltIn,
+    HashError(Object),
 }
 
 impl fmt::Display for EvalError {
@@ -39,6 +39,9 @@ impl fmt::Display for EvalError {
             EvalError::UnknownError => write!(f, "EvalError: UnknownError"),
             EvalError::UnsupportedInputToBuiltIn => {
                 write!(f, "EvalError: Unsupported input to built-in function")
+            },
+            EvalError::HashError(obj) => {
+                write!(f, "{} is not hashable!", obj)
             },
         }
     }

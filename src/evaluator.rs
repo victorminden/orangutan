@@ -7,6 +7,7 @@ use crate::object::{Object, SharedEnvironment, get_built_in};
 use crate::token::Token;
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::collections::HashMap;
 
 pub fn eval(p: &Program, env: SharedEnvironment) -> Result<Object, EvalError> {
     let mut result = Object::Null;
@@ -93,7 +94,13 @@ fn eval_expression(e: &Expression, env: SharedEnvironment) -> Result<Object, Eva
             eval_index_expression(&arr, &idx)
         },
         Expression::HashLiteral(items) => {
-            Err(EvalError::UnknownError)
+           let mut hash = HashMap::new();
+           for (key, value) in items.iter() {
+               let evaluated_key = eval_expression(&key, Rc::clone(&env))?;
+               let evaluated_value = eval_expression(&value, Rc::clone(&env))?;
+               hash.insert(evaluated_key.to_hashable_object()?, evaluated_value);
+           }
+           Ok(Object::Hash(hash))
         },
     }
 }

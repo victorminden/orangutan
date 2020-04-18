@@ -274,9 +274,14 @@ fn rest_test() {
     for (input, want) in tests {
         let evaluated = eval_test(input);
         match evaluated {
-            Ok(Object::Array(_)) => assert_eq!(evaluated.unwrap().to_string(), want),
-            Ok(Object::Null) => assert_eq!(want, ""),
-            _ => panic!("Did not get Object::Array!"),
+            Ok(obj) => {
+                match obj {
+                    Object::Array(_) => assert_eq!(obj.to_string(), want),
+                    Object::Null => assert_eq!(want, ""),
+                    _ => panic!("Got unexpected object!"),
+                }
+            },
+            _ => panic!("Got error!")
         }
     }
 }
@@ -291,9 +296,14 @@ fn push_test() {
     for (input, want) in tests {
         let evaluated = eval_test(input);
         match evaluated {
-            Ok(Object::Array(_)) => assert_eq!(evaluated.unwrap().to_string(), want),
-            Ok(Object::Null) => assert_eq!(want, ""),
-            _ => panic!("Did not get Object::Array!"),
+            Ok(obj) => {
+                match obj {
+                    Object::Array(_) => assert_eq!(obj.to_string(), want),
+                    Object::Null => assert_eq!(want, ""),
+                    _ => panic!("Got unexpected object!"),
+                }
+            },
+            _ => panic!("Got error!")
         }
     }
 }
@@ -316,6 +326,26 @@ fn array_test() {
         }
     }
 }
+
+#[test]
+fn hash_test() {
+    let tests = vec![
+        ("{1: 2*2, \"a\": len(\"bcd\")}", "{\"a\": 3, 1: 4}"),
+    ];
+
+    for (input, want) in tests {
+        let evaluated = eval_test(input);
+        match evaluated {
+            Ok(Object::Hash(_)) => {
+                if let Ok(obj) = evaluated {
+                    assert_eq!(obj.to_string(), want)
+                }
+            },
+            _ => panic!("Did not get Object::Hash!"),
+        }
+    }
+}
+
 
 #[test]
 fn array_index_test() {

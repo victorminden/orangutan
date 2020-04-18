@@ -4,6 +4,7 @@ mod built_in_functions;
 use std::fmt;
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::collections::HashMap;
 pub use self::environment::*;
 pub use self::built_in_functions::*;
 use crate::ast::BlockStatement;
@@ -12,7 +13,24 @@ use crate::evaluator::EvalError;
 pub type BuiltInFunction = fn(Vec<Object>) -> Result<Object, EvalError>;
 pub type SharedEnvironment = Rc<RefCell<Environment>>;
 
-#[derive(Debug, Clone)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
+pub enum HashableObject {
+    Integer(i64),
+    Boolean(bool),
+    Str(String),
+}
+
+impl fmt::Display for HashableObject {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            HashableObject::Str(value) => write!(f, "\"{}\"", value),
+            HashableObject::Integer(value) => write!(f, "{}", value),
+            HashableObject::Boolean(value) => write!(f, "{}", value),
+        }
+    }
+}
+
+#[derive(Clone)]
 pub enum Object {
     Null,
     Integer(i64),
@@ -22,6 +40,7 @@ pub enum Object {
     Function(Vec<String>, BlockStatement, SharedEnvironment),
     BuiltIn(BuiltInFunction),
     Array(Vec<Object>),
+    Hash(HashMap<HashableObject, Object>),
 }
 
 impl fmt::Display for Object {
@@ -39,7 +58,14 @@ impl fmt::Display for Object {
             Object::Array(items) => {
                 write!(f, "[{}]",
                     items.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(", "))
-            }
+            },
+            Object::Hash(elements) => {
+                let mut formatted_elements = elements.iter().map(|(x, y)| format!("{}: {}", x.to_string(), y.to_string()))
+                    .collect::<Vec<String>>();
+                formatted_elements.sort();
+                write!(f, "{{{}}}", formatted_elements.join(", "))
+                
+            },
         }
     }
 }
@@ -50,6 +76,15 @@ impl Object {
             Object::Boolean(value) => value,
             Object::Null => false,
             _ => true,
+        }
+    }
+
+    pub fn to_hashable_object(self) -> Result<HashableObject, EvalError> {
+        match self {
+            Object::Boolean(value) => Ok(HashableObject::Boolean(value)),
+            Object::Str(value) => Ok(HashableObject::Str(value)),
+            Object::Integer(value) => Ok(HashableObject::Integer(value)),
+            other => Err(EvalError::HashError(other)),
         }
     }
 }
