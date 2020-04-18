@@ -9,6 +9,7 @@ pub fn get_built_in(name: &str) -> Option<&Object> {
         "rest" => Some(&Object::BuiltIn(rest)),
         "push" => Some(&Object::BuiltIn(push)),
         "magic_number" => Some(&Object::BuiltIn(magic_number)),
+        "puts" => Some(&Object::BuiltIn(puts)),
         _ => None,
     }
 }
@@ -16,6 +17,17 @@ pub fn get_built_in(name: &str) -> Option<&Object> {
 fn magic_number(_: Vec<Object>) -> Result<Object, EvalError> {
     // Doesn't care about parameters, just returns 42.
     Ok(Object::Integer(42))
+}
+
+fn puts (params: Vec<Object>) -> Result<Object, EvalError> {
+    for param in &params {
+        match param {
+            // We do a silly match on the string to remove quotes from result.
+            Object::Str(string) => { println!("{}", string); },
+            _ => { println!("{}", param); }
+        };
+    }
+    Ok(Object::Null)
 }
 
 fn len(params: Vec<Object>) -> Result<Object, EvalError> {
