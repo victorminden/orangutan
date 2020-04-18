@@ -473,3 +473,27 @@ fn array_index_statement_test() -> Result<(), ParseError> {
 
     Ok(())
 }
+
+#[test]
+fn hash_literal_statement_test() -> Result<(), ParseError> {
+    let input = "
+    {1: 2, 3: 4, \"one\": \"two\"};
+    {};";
+    
+    let expected = vec![
+    "{1: 2, 3: 4, \"one\": \"two\"};",
+    "{};",
+    ];
+
+    let mut parser = Parser::new(Lexer::new(input));
+    let program = parser.parse_program()?;
+    parser.print_errors();
+    assert_eq!(program.statements.len(), expected.len());
+
+    for (expected, statement) in 
+    expected.iter().zip(program.statements.iter()) {
+        assert_eq!(&statement.to_string(), expected);
+    }
+
+    Ok(())
+}

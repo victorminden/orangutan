@@ -92,6 +92,9 @@ fn eval_expression(e: &Expression, env: SharedEnvironment) -> Result<Object, Eva
             let idx = eval_expression(&**right, env)?;
             eval_index_expression(&arr, &idx)
         },
+        Expression::HashLiteral(items) => {
+            Err(EvalError::UnknownError)
+        },
     }
 }
 

@@ -205,6 +205,7 @@ impl<'a> Parser<'a> {
             Token::If => self.parse_if_expression()?,
             Token::Function => self.parse_function_literal()?,
             Token::LBracket => self.parse_array_literal()?,
+            Token::LBrace => self.parse_hash_literal()?,
             _ => { 
                 let other = self.lexer.next_token();
                 return Err(ParseError::UnexpectedToken(other)); 
@@ -228,6 +229,29 @@ impl<'a> Parser<'a> {
                 };
         }
         Ok(expr)
+    }
+
+    fn parse_hash_literal(&mut self) -> Result<Expression, ParseError> {
+        let mut keys_values = Vec::new();
+    
+        self.expect_peek(Token::LBrace)?;
+
+        if *self.lexer.peek_token() != Token::RBrace {
+            let key = self.parse_expression(Precedence::Lowest)?;
+            self.expect_peek(Token::Colon)?;
+            let value = self.parse_expression(Precedence::Lowest)?;
+            keys_values.push((key, value));
+        }
+        while *self.lexer.peek_token() == Token::Comma {
+            self.lexer.next_token();
+            let key = self.parse_expression(Precedence::Lowest)?;
+            self.expect_peek(Token::Colon)?;
+            let value = self.parse_expression(Precedence::Lowest)?;
+            keys_values.push((key, value));   
+        }
+        self.expect_peek(Token::RBrace)?;
+        Ok(Expression::HashLiteral(keys_values))
+
     }
 
     fn parse_index_expression(&mut self, left_expr: Expression) -> Result<Expression, ParseError> {

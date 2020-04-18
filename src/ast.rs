@@ -62,6 +62,7 @@ pub enum Expression {
     Call(Box<Expression>, Vec<Expression>),
     ArrayLiteral(Vec<Expression>),
     Index(Box<Expression>, Box<Expression>),
+    HashLiteral(Vec<(Expression, Expression)>),
 }
 
 impl fmt::Display for Expression {
@@ -93,6 +94,11 @@ impl fmt::Display for Expression {
             Expression::ArrayLiteral(elements) => {
                 write!(f, "[{}]",
                     elements.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(", "))
+            },
+            Expression::HashLiteral(elements) => {
+                write!(f, "{{{}}}",
+                elements.iter().map(|(x, y)| format!("{}: {}", x.to_string(), y.to_string()))
+                    .collect::<Vec<String>>().join(", "))
             },
             Expression::Index(arr, idx) => {
                 write!(f, "({}[{}])", arr, idx)
