@@ -341,7 +341,7 @@ fn array_index_test() {
 }
 
 #[test]
-fn extended_function_test() {
+fn map_function_test() {
     let input = "
     let map = fn(arr, f) {
         let iter = fn(arr, accumulated) {
@@ -366,3 +366,30 @@ fn extended_function_test() {
         _ => panic!("Did not get Object::Array!"),
     }
 }
+
+#[test]
+fn sum_function_test() {
+    let input = "
+    let reduce = fn(arr, initial, f) {
+        let iter = fn(arr, result) {
+            if (len(arr) == 0) {
+                result
+            } else {
+                iter(rest(arr), f(result, first(arr)));
+            }
+        };
+        iter(arr, initial);
+    };
+    let sum = fn(arr) {
+        reduce(arr, 0, fn(initial, el) { initial + el });
+    };
+    sum([1, 2, 3, 4, 5]);";
+    let evaluated = eval_test(input);
+    match evaluated { 
+        Ok(Object::Integer(int)) => {
+            assert_eq!(int, 15)
+        },
+        _ => panic!("Did not get Object::Integer!"),
+    }
+}
+
