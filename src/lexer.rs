@@ -5,6 +5,10 @@ use std::str::Chars;
 use std::iter::Peekable;
 
 fn is_valid_name_symbol(ch: &char) -> bool {
+    is_valid_name_start_symbol(ch) || ch.is_numeric()
+}
+
+fn is_valid_name_start_symbol(ch: &char) -> bool {
     ch.is_alphabetic() || *ch == '_'
 }
 
@@ -72,7 +76,7 @@ impl<'a> Lexer<'a> {
                 self.read_string()
             },
             Some(a) => {
-                if is_valid_name_symbol(&a) {
+                if is_valid_name_start_symbol(&a) {
                     return lookup_ident(self.read_identifier(a));
                 } else if a.is_numeric() {
                     return Token::Integer(self.read_number(a));
