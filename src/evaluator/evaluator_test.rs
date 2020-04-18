@@ -371,6 +371,26 @@ fn array_index_test() {
 }
 
 #[test]
+fn hash_index_test() {
+    let tests = vec![
+        ("{\"foo\": 5}[\"foo\"]", 5),
+        ("{\"foo\": 5}[\"bar\"]", -1),
+        ("let key = \"foo\"; {\"foo\": 5}[key]", 5),
+        ("{}[\"foo\"]", -1),
+    ];
+
+    for (input, want) in tests {
+        let evaluated = eval_test(input);
+        match evaluated {
+            Ok(Object::Integer(got)) => assert_eq!(got, want),
+            Ok(Object::Null) => assert_eq!(want, -1),
+            _ => panic!("Did not get Object::Integer!"),
+        }
+    }
+}
+
+
+#[test]
 fn map_function_test() {
     let input = "
     let map = fn(arr, f) {

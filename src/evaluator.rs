@@ -89,9 +89,9 @@ fn eval_expression(e: &Expression, env: SharedEnvironment) -> Result<Object, Eva
             Ok(Object::Array(elements))
         },
         Expression::Index(left, right) => {
-            let arr = eval_expression(&**left, Rc::clone(&env))?;
+            let obj = eval_expression(&**left, Rc::clone(&env))?;
             let idx = eval_expression(&**right, env)?;
-            eval_index_expression(&arr, &idx)
+            eval_index_expression(&obj, &idx)
         },
         Expression::HashLiteral(items) => {
            let mut hash = HashMap::new();
@@ -105,13 +105,21 @@ fn eval_expression(e: &Expression, env: SharedEnvironment) -> Result<Object, Eva
     }
 }
 
-fn eval_index_expression(array: &Object, index: &Object) -> Result<Object, EvalError> {
-    match (&array, &index) {
+fn eval_index_expression(obj: &Object, index: &Object) -> Result<Object, EvalError> {
+    match (&obj, &index) {
         (Object::Array(arr), Object::Integer(idx)) => {
             match arr.get(*idx as usize) {
                 Some(obj) => Ok(obj.clone()),
                 None => Ok(Object::Null)
             }
+        },
+        (Object::Hash(items), _) => {
+            let key = index.clone().to_hashable_object()?;
+            match items.get(&key) {
+                Some(result) => Ok(result.clone()),
+                None => Ok(Object::Null),
+            }
+            
         },
         _ => Err(EvalError::UnknownError),
     }
