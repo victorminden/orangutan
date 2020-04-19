@@ -1,5 +1,12 @@
+//! Token
+//! 
+//! `token` holds a simple type and functionality for dealing with tokens of the Monkey language during lexing and parsing.
 use std::fmt;
 
+/// Represents a single input token recognized as valid in some Monkey language context.
+/// 
+/// The different possible values of `Token` represent all tokens defined in the Monkey language.
+/// In addition, a few special tokens are defined to represent special cases during lexing and parsing.
 #[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     Null,
@@ -41,6 +48,10 @@ pub enum Token {
     Return,
 }
 
+/// Converts an input string to its corresponding token type.
+///
+/// If `ident` is a known keyword, the corresponding keyword token is returned.
+/// Otherwise, a generic identifier token is returned.
 pub fn lookup_ident(ident: String) -> Token {
     match &*ident {
         "fn" => Token::Function,

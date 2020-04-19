@@ -1,3 +1,8 @@
+//! Lexer
+//! 
+//! `lexer` contains functionality for lexing raw input, i.e., converting input strings to a sequence of Monkey tokens.
+//! The public interface is simply the `Lexer` type, which performs all the heavy lifting.
+
 use crate::token::Token;
 use crate::token::lookup_ident;
 
@@ -12,6 +17,7 @@ fn is_valid_name_start_symbol(ch: &char) -> bool {
     ch.is_alphabetic() || *ch == '_'
 }
 
+/// A struct wrapping a raw input string for lexing.
 pub struct Lexer<'a> {
     input: Peekable<Chars<'a>>,
     peek_buffer: Token,
@@ -25,14 +31,24 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    /// Returns a reference to the next token to be lexed from the input stream.
+    /// 
+    /// Calling `peek_token` does not advance to the next token, so calling it twice in a row returns the same result.
     pub fn peek_token(&mut self) -> &Token {
+        // If we already peeked, we can use the buffered result.
+        // Otherwise, we must populate the buffer.
         if self.peek_buffer == Token::Null {
             self.peek_buffer = self.next_token_from_input();
         }
         &self.peek_buffer
     }
 
+    /// Returns the next token lexed from the input stream.
+    /// 
+    /// Repeatedly calling `next_token` will iterate over all tokens of the input.
     pub fn next_token(&mut self) -> Token {
+        // It is possible that we already peeked the input.
+        // If so, the next token is in the buffer.
         match self.peek_buffer {
             Token::Null => self.next_token_from_input(),
             _ => std::mem::replace(&mut self.peek_buffer, Token::Null),
