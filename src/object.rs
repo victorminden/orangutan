@@ -1,3 +1,7 @@
+//! Object
+//! 
+//! `object` contains types representing evaluated objects from a Monkey program.
+//! These types are used while interpreting Monkey programs.
 mod environment;
 mod built_in_functions;
 
@@ -13,6 +17,7 @@ use crate::evaluator::EvalError;
 pub type BuiltInFunction = fn(Vec<Object>) -> Result<Object, EvalError>;
 pub type SharedEnvironment = Rc<RefCell<Environment>>;
 
+// Represents an object that is of a hashable type.
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum HashableObject {
     Integer(i64),
@@ -30,6 +35,8 @@ impl fmt::Display for HashableObject {
     }
 }
 
+/// Represents any object in the Monkey language after evaluation.
+/// These types are specific to the interpreter implementation.
 #[derive(Clone)]
 pub enum Object {
     Null,

@@ -1,5 +1,10 @@
+//! BuiltInFunctions
+//! 
+//! `built_in_functions` contains the implementation of functions built-in to the Monkey language.
 use crate::object::Object;
 use crate::evaluator::EvalError;
+
+// TODO: Document.
 
 pub fn get_built_in(name: &str) -> Option<&Object> {
     match name {
