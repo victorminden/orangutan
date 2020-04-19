@@ -1,3 +1,7 @@
+//! Evaluator
+//! 
+//! `evaluator` contains functions for evaluating parsed expressions in the Monkey language.
+//! The public interface is simply the `eval` function.
 #[cfg(test)]
 mod evaluator_test;
 mod eval_error;
@@ -9,23 +13,30 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::collections::HashMap;
 
+/// Returns the result of evaluating the input program.
+/// 
+/// The input `p` is the primary input consisting of the abstract syntax tree of a Monkey program.
+/// The input `env` contains any saved state (environment variables) to be used, and may be modified.
 pub fn eval(p: &Program, env: SharedEnvironment) -> Result<Object, EvalError> {
     let mut result = Object::Null;
     for statement in &p.statements {
         result = eval_statement(statement, Rc::clone(&env))?;
         if let Object::Return(value) = result {
+            // We *do* unwrap the returned object from its `Return`.
             return Ok(*value);
         }
     }
     return Ok(result);
 }
 
-pub fn eval_block_statement(
+// TODO: This function could be merged with `eval` if we merge the `BlockStatement` and `Program` types.
+fn eval_block_statement(
     bs: &BlockStatement, env: SharedEnvironment) -> Result<Object, EvalError> {
     let mut result = Object::Null;
     for statement in &bs.statements {
         result = eval_statement(statement, Rc::clone(&env))?;
         if let Object::Return(_) = result {
+            // We do *not* unwrap the returned object from its `Return`.
             return Ok(result);
         }
     }

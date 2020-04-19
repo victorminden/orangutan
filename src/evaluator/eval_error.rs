@@ -1,7 +1,14 @@
+//! EvalError
+//! 
+//! `eval_error` contains an enum type representing errors encountered while evaluating Monkey statements.
 use std::fmt;
 use crate::token::Token;
 use crate::object::Object;
 
+/// Represents errors encountered during evaluation of the Monkey language.
+/// 
+/// In most cases the error is specific and self-explanatory.
+/// However, in some cases we fallback to a generic error to make implementation less cumbersome.
 pub enum EvalError {
     UnknownError,
     UnknownPrefixOperator(Token),
