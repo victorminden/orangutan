@@ -1,16 +1,21 @@
+//! Parser
+//! 
+//! `parser` offers functionality for parsing sequences of tokens into Monkey expressions.
+//! The primary interface is the `Parser` type which does all the heavy lifting.
 mod parse_error;
 mod precedence;
 #[cfg(test)]
 mod parser_test;
 
 pub use self::parse_error::*;
-pub use self::precedence::*;
+use self::precedence::*;
 
 use crate::lexer::Lexer;
 use crate::ast::{Program, Statement, Expression, BlockStatement};
 use crate::token::Token;
 use crate::parser::{ParseError, Precedence, token_precedence};
 
+/// A struct handling the parsing of tokens from the wrapped `Lexer`.
 pub struct Parser<'a> {
     lexer: Lexer<'a>,
     errors: Vec<ParseError>,
@@ -21,12 +26,16 @@ impl<'a> Parser<'a> {
         Parser { lexer, errors: Vec::new() }
     }
 
+    /// Prints the errors encountered during parsing to standard out.
     pub fn print_errors(self) {
+        // TODO: Determine whether we want to fail immediately on an error in parsing.
+        //   When we fast-fail, this function makes less sense.
         for err in self.errors {
             println!("Error: {:?}", err );
         }
     }
 
+    /// Returns a `Program` of parsed expressions suitable for evaluation in the Monkey language.
     pub fn parse_program(&mut self) -> Result<Program, ParseError> {
         let mut statements = vec![];
         while *self.lexer.peek_token() != Token::EndOfFile {

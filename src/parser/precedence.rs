@@ -1,5 +1,10 @@
+//! Precedence
+//! 
+//! `precedence` contains an enum type representing the precedence of operators in the Monkey language.
+
 use crate::token::Token;
 
+/// Represents the order of operations in the Monkey language.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub enum Precedence {
     Lowest,
@@ -12,6 +17,7 @@ pub enum Precedence {
     Index,
 }
 
+/// Returns the precedence of any token in the Monkey language.
 pub fn token_precedence(token: &Token) -> Precedence {
     match token {
         Token::Equal | Token::NotEqual => Precedence::Equals,
