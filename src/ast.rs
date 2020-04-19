@@ -1,6 +1,11 @@
+//! AST
+//! 
+//! `ast` contains types representing the (A)bstract (S)yntax (T)ree of expressions in the Monkey language.
+//! These parsed expressions may then be interpreted / compiled / otherwise processed.
 use std::fmt;
 use crate::token::Token;
 
+/// Represents a full parsed program of Monkey statements.
 #[derive(Debug)]
 pub struct Program {
     pub statements: Vec<Statement>,
@@ -16,6 +21,9 @@ impl fmt::Display for Program {
     }
 }
 
+/// Represents a statement in the Monkey language.
+/// 
+/// There are only a small number of distinct variants due to the simplicity of the language.
 #[derive(Debug, Clone)]
 pub enum Statement {
     Let(String, Expression),
@@ -33,6 +41,7 @@ impl fmt::Display for Statement {
     }
 }
 
+/// Represents a grouped sequence of statements in the Monkey language.
 // TODO: BlockStatement type is essentially just Program -- remove?
 #[derive(Debug, Clone)]
 pub struct BlockStatement {
@@ -49,6 +58,7 @@ impl fmt::Display for BlockStatement {
   }
 }
 
+/// Represents a parsed expression in the Monkey language.
 #[derive(Debug, Clone)]
 pub enum Expression {
     Ident(String),
