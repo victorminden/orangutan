@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod compiler_test;
 
-use crate::code::{Instructions, Constant, Bytecode};
+use crate::code::{Instructions, Constant, Bytecode, OpCode};
 use crate::ast::{Program, Statement, Expression};
 use crate::object::Object;
 
@@ -54,21 +54,28 @@ impl Compiler {
             },
             Expression::IntegerLiteral(int) => {
                 let int = Object::Integer(*int);
+                let instructions = OpCode::Constant.make_u16(self.add_constant(int));
+                self.emit(instructions);
             }
             _ => return Err(CompileError::UnknownError)
         }    
         Ok(())
     }
 
-    fn add_constant(&mut self, constant: Constant) -> usize {
+    fn add_constant(&mut self, constant: Constant) -> u16 {
         self.constants.push(constant);
-        return self.constants.len() - 1;
+        return (self.constants.len() - 1) as u16;
     }
 
+    // TODO: Determine if this function can be removed entirely.
     fn add_instruction(&mut self, ins: Instructions) -> usize {
-        let pos_new_instruction = self.instructions.len() - 1;
+        let pos_new_instruction = self.instructions.len();
         self.instructions.extend(ins);
         return pos_new_instruction;
+    }
+
+    fn emit(&mut self, ins: Instructions) -> usize {
+        return self.add_instruction(ins);
     }
 
 }

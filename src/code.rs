@@ -29,12 +29,6 @@ pub struct Definition {
     pub widths: Vec<usize>,
 }
 
-#[derive(Debug)]
-pub enum MakeError {
-    WrongNumberOfArgs(usize),
-    WrongArgSize(usize),
-}
-
 #[derive(IntoPrimitive, TryFromPrimitive, Debug, Eq, PartialEq)]
 #[repr(u8)]
 pub enum OpCode {
@@ -51,23 +45,13 @@ impl OpCode {
         }
     }
 
-    pub fn make(self) -> Result<Instructions, MakeError> {
-        match self.definition().widths.len() {
-            0 => Ok(vec![self.into()]),
-            other => Err(MakeError::WrongNumberOfArgs(other))
-        } 
+    pub fn make(self) -> Instructions {
+        vec![self.into()]
     }
 
-    pub fn make_u16(self, operand: u16) -> Result<Instructions, MakeError> {
-        let w = &self.definition().widths;
-        if w.len() != 1 {
-            Err(MakeError::WrongNumberOfArgs(w.len()))
-        } else if w[0] != 2 {
-            Err(MakeError::WrongArgSize(w[0]))
-        } else {
-            let b = u16::to_be_bytes(operand);
-            Ok(vec![self.into(), b[0], b[1]])
-        }
+    pub fn make_u16(self, operand: u16) -> Instructions {
+        let b = u16::to_be_bytes(operand);
+        vec![self.into(), b[0], b[1]]
     }
 }
 
@@ -141,17 +125,15 @@ mod tests {
         ];
 
         for (op, operand, want) in tests {
-            match op.make_u16(operand) {
-                Ok(got) => assert_eq!(got, want),
-                _ => panic!("Got error!")
-            }
+            let got = op.make_u16(operand);
+            assert_eq!(got, want);
         }
     }
 
     #[test]
     fn read_operands_test() {
         let tests = vec![
-            (OpCode::Constant.make_u16(65535).unwrap(), OpCode::Constant.definition(), vec![65535], 2),
+            (OpCode::Constant.make_u16(65535), OpCode::Constant.definition(), vec![65535], 2),
         ];
         for (instructions, def, want_operands, want_n) in tests {
             let (operands, n) = read_operands(&def, &instructions[1..]);
@@ -165,9 +147,9 @@ mod tests {
     #[test]
     fn disassemble_test() {
         let instructions = vec![
-            OpCode::Constant.make_u16(1).unwrap(),
-            OpCode::Constant.make_u16(2).unwrap(),
-            OpCode::Constant.make_u16(65535).unwrap(),
+            OpCode::Constant.make_u16(1),
+            OpCode::Constant.make_u16(2),
+            OpCode::Constant.make_u16(65535),
         ].concat();
         let expected = "0000 OpConstant 1\n0003 OpConstant 2\n0006 OpConstant 65535";
         assert_eq!(disassemble(&instructions), expected);

@@ -61,8 +61,8 @@ fn integer_arithmetic_test() {
                 Constant::Integer(2),
                 ], 
             expected_instructions :vec![
-                OpCode::Constant.make_u16(0).unwrap(),
-                OpCode::Constant.make_u16(1).unwrap(),
+                OpCode::Constant.make_u16(0),
+                OpCode::Constant.make_u16(1),
                 ],
         },
     ];
