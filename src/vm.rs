@@ -50,8 +50,8 @@ impl Vm {
                     self.push(self.constants[const_idx as usize].clone())?;
                 },
                 OpCode::Add => {
-                    let left = self.pop()?;
                     let right = self.pop()?;
+                    let left = self.pop()?;
                     match (left, right) {
                         (Object::Integer(a), Object::Integer(b)) => { self.push(Object::Integer(a+b))?; },
                         _ => return Err(VmError::UnsupportedOperands)
