@@ -6,6 +6,8 @@
 use crate::lexer;
 use crate::parser;
 use crate::evaluator;
+use crate::compiler;
+use crate::vm;
 use crate::object::Environment;
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -34,6 +36,18 @@ pub fn start() -> io::Result<()> {
     println!("{}", MONKEY_FACE);
     println!("Feel free to type in commands");
 
+    let compile = true;
+    if compile {
+        println!("(REPL is running in compiled mode)");
+        start_with_compiler()?;
+    } else {
+        println!("(REPL is running in interpreted mode)");
+        start_with_interpreter()?;
+    }
+    Ok(())
+}
+
+fn start_with_interpreter() -> io::Result<()> {
     let env = Rc::new(RefCell::new(Environment::new()));
     loop {
         print!("{}", PROMPT);
@@ -58,5 +72,40 @@ pub fn start() -> io::Result<()> {
                 println!("{}", error)
             },
         }
+    }
+}
+
+fn start_with_compiler() -> io::Result<()> {
+    loop {
+        print!("{}", PROMPT);
+        io::stdout().flush()?;
+        let mut input = String::new();
+        io::stdin().read_line(&mut input)?;
+        
+        let mut p = parser::Parser::new(lexer::Lexer::new(&input));
+        let program = match p.parse_program() {
+            Ok(prog) => prog,
+            _ => {
+                println!("Error encountered while parsing the input!");
+                p.print_errors();
+                continue;
+            }
+        };
+
+        let mut compiler = compiler::Compiler::new();
+        let bytecode = match compiler.compile(&program) {
+            Ok(bc) => bc,
+            _ => {
+                println!("Error encountered during compilation!");
+                continue;
+            }
+        };
+
+        let mut vm = vm::Vm::new(&bytecode);
+        match vm.run() {
+            Ok(obj) => println!("{}", obj),
+            _ => println!("Error executing bytecode!"),
+        }
+
     }
 }
