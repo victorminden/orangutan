@@ -7,12 +7,8 @@ use crate::object::Object;
 
 pub type Instructions = Vec<u8>;
 pub type ReadOnlyInstructions = [u8];
-
 // TODO: Determine a space-efficient way of representing constants.
-#[derive(Clone)]
-pub enum Constant {
-    Integer(u16),
-}
+pub type Constant = Object;
 
 pub struct Bytecode {
     pub instructions: Instructions,
