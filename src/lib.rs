@@ -14,3 +14,4 @@ mod parser;
 mod object;
 mod evaluator;
 mod code;
+mod compiler;
