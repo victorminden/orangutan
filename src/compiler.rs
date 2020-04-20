@@ -4,6 +4,7 @@ mod compiler_test;
 use crate::code::{Instructions, Constant, Bytecode, OpCode};
 use crate::ast::{Program, Statement, Expression};
 use crate::object::Object;
+use crate::token::Token;
 
 pub struct Compiler {
     instructions: Instructions,
@@ -13,6 +14,7 @@ pub struct Compiler {
 #[derive(Debug)]
 pub enum CompileError {
     UnknownError,
+    UnknownOperator,
 }
 
 impl Compiler {
@@ -47,10 +49,13 @@ impl Compiler {
 
     fn compile_expression(&mut self, expression: &Expression) -> Result<(), CompileError> {
         match expression {
-            Expression::Infix(left, _, right) => {
+            Expression::Infix(left, infix, right) => {
                 self.compile_expression(left)?;
-                // TODO: Why are we not yet treating the infix operator?
                 self.compile_expression(right)?;
+                match infix {
+                    Token::Plus => { self.emit(OpCode::Add.make()); },
+                    _ => return Err(CompileError::UnknownOperator),
+                }
             },
             Expression::IntegerLiteral(int) => {
                 let int = Object::Integer(*int);

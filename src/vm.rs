@@ -13,6 +13,8 @@ pub enum VmError {
     BadOpCode,
     EmptyStack,
     StackOverflow,
+    StackUnderflow,
+    UnsupportedOperands,
 }
 
 pub struct Vm {
@@ -46,15 +48,23 @@ impl Vm {
                     ip += 2;
                     // TODO: Remove the super slow clones...
                     self.push(self.constants[const_idx as usize].clone())?;
+                },
+                OpCode::Add => {
+                    let left = self.pop()?;
+                    let right = self.pop()?;
+                    match (left, right) {
+                        (Object::Integer(a), Object::Integer(b)) => { self.push(Object::Integer(a+b))?; },
+                        _ => return Err(VmError::UnsupportedOperands)
+                    }
                 }
                 _ => {},
             }
             ip += 1
         }
-        self.stack_top()
+        self.top()
     }
 
-    fn stack_top(&self) -> Result<Object, VmError> {
+    fn top(&self) -> Result<Object, VmError> {
         match self.sp {
             0 => Err(VmError::EmptyStack),
             _ => Ok(self.stack[self.sp-1].clone())
@@ -69,5 +79,15 @@ impl Vm {
         self.stack[self.sp] = obj;
         self.sp += 1;
         Ok(())
+    }
+
+    fn pop(&mut self) -> Result<Object, VmError> {
+        if self.sp == 0 {
+            return Err(VmError::StackUnderflow);
+        }
+        // TODO: Remove slow clones.
+        let obj = self.stack[self.sp - 1].clone();
+        self.sp -= 1;
+        Ok(obj)
     }
 }

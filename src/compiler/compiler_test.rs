@@ -63,10 +63,10 @@ fn integer_arithmetic_test() {
             expected_instructions :vec![
                 OpCode::Constant.make_u16(0),
                 OpCode::Constant.make_u16(1),
+                OpCode::Add.make(),
                 ],
         },
     ];
-    
     for test in tests {
         test_compile(test);
     }

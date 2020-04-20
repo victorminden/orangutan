@@ -22,7 +22,7 @@ fn integer_arithmetic_test() {
     let tests = vec![
         ("1", 1),
         ("2", 2),
-        ("1 + 2", 2) // FIXME TO BE 3 
+        ("1 + 2", 3),
     ];
     for (test_input, expected) in tests {
         match run(test_input) {

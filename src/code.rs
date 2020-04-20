@@ -33,6 +33,7 @@ pub struct Definition {
 #[repr(u8)]
 pub enum OpCode {
     Constant,
+    Add,
 }
 
 impl OpCode {
@@ -41,6 +42,10 @@ impl OpCode {
             OpCode::Constant => Definition {
                 name: String::from("OpConstant"),
                 widths: vec![2],
+            },
+            OpCode::Add => Definition {
+                name: String::from("OpAdd"),
+                widths: vec![],
             },
         }
     }
@@ -147,11 +152,11 @@ mod tests {
     #[test]
     fn disassemble_test() {
         let instructions = vec![
-            OpCode::Constant.make_u16(1),
+            OpCode::Add.make(),
             OpCode::Constant.make_u16(2),
             OpCode::Constant.make_u16(65535),
         ].concat();
-        let expected = "0000 OpConstant 1\n0003 OpConstant 2\n0006 OpConstant 65535";
+        let expected = "0000 OpAdd\n0001 OpConstant 2\n0004 OpConstant 65535";
         assert_eq!(disassemble(&instructions), expected);
     }
 }
