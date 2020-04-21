@@ -41,6 +41,7 @@ impl Compiler {
         match statement {
             Statement::Expression(expr) => {
                 self.compile_expression(expr)?;
+                self.emit(OpCode::Pop.make());
             },
             _ => return Err(CompileError::UnknownError),
         }
@@ -52,10 +53,14 @@ impl Compiler {
             Expression::Infix(left, infix, right) => {
                 self.compile_expression(left)?;
                 self.compile_expression(right)?;
-                match infix {
-                    Token::Plus => { self.emit(OpCode::Add.make()); },
+                let opcode = match infix {
+                    Token::Plus => OpCode::Add,
+                    Token::Minus => OpCode::Sub,
+                    Token::Asterisk => OpCode::Mul,
+                    Token::Slash => OpCode::Div,
                     _ => return Err(CompileError::UnknownOperator),
-                }
+                };
+                self.emit(opcode.make());
             },
             Expression::IntegerLiteral(int) => {
                 let int = Object::Integer(*int);

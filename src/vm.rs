@@ -49,34 +49,52 @@ impl Vm {
                 _ => return Err(VmError::BadOpCode),
             };
             match op {
+                OpCode::Pop => {
+                    self.pop()?;
+                },
                 OpCode::Constant => {
                     let const_idx = read_uint16(self.instructions[ip+1], self.instructions[ip+2]);
                     ip += 2;
                     self.push(self.constants[const_idx as usize].clone())?;
                 },
-                OpCode::Add => {
-                    let right = self.pop()?;
-                    let left = self.pop()?;
-                    match (&*left, &*right) {
-                        (Object::Integer(a), Object::Integer(b)) => { self.push(Rc::new(Object::Integer(a+b)))?; },
-                        _ => return Err(VmError::UnsupportedOperands)
-                    }
+                OpCode::Add | OpCode::Sub | OpCode::Mul | OpCode::Div => {
+                    self.binary_op(op)?;
                 }
                 _ => {},
             }
             ip += 1
         }
 
-        let result = &*self.top()?;
+        let result = &*self.last_top();
         Ok(result.clone())
     }
 
-    fn top(&self) -> Result<Rc<Object>, VmError> {
-        match self.sp {
-            0 => Err(VmError::EmptyStack),
-            _ => Ok(self.stack[self.sp-1].clone())
+    fn binary_op(&mut self, op: OpCode) -> Result<(), VmError> {
+        let right = self.pop()?;
+        let left = self.pop()?;
+        match (&*left, &*right) {
+            (Object::Integer(left), Object::Integer(right)) => { 
+              self.binary_integer_op(*left, op, *right)?;
+            },
+            _ => return Err(VmError::UnsupportedOperands)
         }
+        Ok(())
+    }
 
+    fn binary_integer_op(&mut self, left: i64, op: OpCode, right: i64) -> Result<(), VmError> {
+        let result = match op {
+            OpCode::Add => left + right,
+            OpCode::Sub => left - right,
+            OpCode::Mul => left * right,
+            OpCode::Div => left / right,
+            _ => return Err(VmError::BadOpCode)
+        };
+        self.push(Rc::new(Object::Integer(result)))?;
+        Ok(())
+    }
+
+    fn last_top(&self) -> Rc<Object> {
+        self.stack[self.sp].clone()
     }
 
     fn push(&mut self, obj: Rc<Object>) -> Result<(), VmError> {

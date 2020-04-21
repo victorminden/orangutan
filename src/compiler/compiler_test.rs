@@ -64,6 +64,59 @@ fn integer_arithmetic_test() {
                 OpCode::Constant.make_u16(0),
                 OpCode::Constant.make_u16(1),
                 OpCode::Add.make(),
+                OpCode::Pop.make(),
+                ],
+        },
+        TestCase {
+            input: "1; 2", 
+            expected_constants: vec![
+                Constant::Integer(1), 
+                Constant::Integer(2),
+                ], 
+            expected_instructions :vec![
+                OpCode::Constant.make_u16(0),
+                OpCode::Pop.make(),
+                OpCode::Constant.make_u16(1),
+                OpCode::Pop.make(),
+                ],
+        },
+        TestCase {
+            input: "2-1", 
+            expected_constants: vec![
+                Constant::Integer(2), 
+                Constant::Integer(1),
+                ], 
+            expected_instructions :vec![
+                OpCode::Constant.make_u16(0),
+                OpCode::Constant.make_u16(1),
+                OpCode::Sub.make(),
+                OpCode::Pop.make(),
+                ],
+        },
+        TestCase {
+            input: "1*2", 
+            expected_constants: vec![
+                Constant::Integer(1), 
+                Constant::Integer(2),
+                ], 
+            expected_instructions :vec![
+                OpCode::Constant.make_u16(0),
+                OpCode::Constant.make_u16(1),
+                OpCode::Mul.make(),
+                OpCode::Pop.make(),
+                ],
+        },
+        TestCase {
+            input: "2/1", 
+            expected_constants: vec![
+                Constant::Integer(2), 
+                Constant::Integer(1),
+                ], 
+            expected_instructions :vec![
+                OpCode::Constant.make_u16(0),
+                OpCode::Constant.make_u16(1),
+                OpCode::Div.make(),
+                OpCode::Pop.make(),
                 ],
         },
     ];

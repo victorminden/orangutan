@@ -34,6 +34,10 @@ pub struct Definition {
 pub enum OpCode {
     Constant,
     Add,
+    Sub,
+    Mul,
+    Div,
+    Pop,
 }
 
 impl OpCode {
@@ -45,6 +49,22 @@ impl OpCode {
             },
             OpCode::Add => Definition {
                 name: String::from("OpAdd"),
+                widths: vec![],
+            },
+            OpCode::Sub => Definition {
+                name: String::from("OpSub"),
+                widths: vec![],
+            },
+            OpCode::Mul => Definition {
+                name: String::from("OpMul"),
+                widths: vec![],
+            },
+            OpCode::Div => Definition {
+                name: String::from("OpDiv"),
+                widths: vec![],
+            },
+            OpCode::Pop => Definition {
+                name: String::from("OpPop"),
                 widths: vec![],
             },
         }
