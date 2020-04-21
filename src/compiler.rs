@@ -51,13 +51,26 @@ impl Compiler {
     fn compile_expression(&mut self, expression: &Expression) -> Result<(), CompileError> {
         match expression {
             Expression::Infix(left, infix, right) => {
-                self.compile_expression(left)?;
-                self.compile_expression(right)?;
+                match infix {
+                    Token::LessThan => {
+                        // Optimization to flip args and re-use GreaterThan.
+                        self.compile_expression(right)?;
+                        self.compile_expression(left)?;
+                    }
+                    _ => {
+                        self.compile_expression(left)?;
+                        self.compile_expression(right)?;
+                    }
+                }
+                
                 let opcode = match infix {
                     Token::Plus => OpCode::Add,
                     Token::Minus => OpCode::Sub,
                     Token::Asterisk => OpCode::Mul,
                     Token::Slash => OpCode::Div,
+                    Token::Equal => OpCode::Equal,
+                    Token::NotEqual => OpCode::NotEqual,
+                    Token::GreaterThan | Token::LessThan => OpCode::GreaterThan,
                     _ => return Err(CompileError::UnknownOperator),
                 };
                 self.emit(opcode.make());

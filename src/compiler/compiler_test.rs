@@ -144,6 +144,68 @@ fn boolean_test() {
                 OpCode::Pop.make(),
                 ],
         },
+        TestCase {
+            input: "1 > 2", 
+            expected_constants: vec![
+                Constant::Integer(1),
+                Constant::Integer(2),
+            ], 
+            expected_instructions :vec![
+                OpCode::Constant.make_u16(0),
+                OpCode::Constant.make_u16(1),
+                OpCode::GreaterThan.make(),
+                OpCode::Pop.make(),
+            ],
+        },
+        TestCase {
+            input: "1 < 2", 
+            expected_constants: vec![
+                Constant::Integer(2),
+                Constant::Integer(1),
+            ], 
+            expected_instructions :vec![
+                OpCode::Constant.make_u16(0),
+                OpCode::Constant.make_u16(1),
+                OpCode::GreaterThan.make(),
+                OpCode::Pop.make(),
+            ],
+        },
+        TestCase {
+            input: "1 == 2", 
+            expected_constants: vec![
+                Constant::Integer(1),
+                Constant::Integer(2),
+            ], 
+            expected_instructions :vec![
+                OpCode::Constant.make_u16(0),
+                OpCode::Constant.make_u16(1),
+                OpCode::Equal.make(),
+                OpCode::Pop.make(),
+            ],
+        },
+        TestCase {
+            input: "1 != 2", 
+            expected_constants: vec![
+                Constant::Integer(1),
+                Constant::Integer(2),
+            ], 
+            expected_instructions :vec![
+                OpCode::Constant.make_u16(0),
+                OpCode::Constant.make_u16(1),
+                OpCode::NotEqual.make(),
+                OpCode::Pop.make(),
+            ],
+        },
+        TestCase {
+            input: "true == false", 
+            expected_constants: vec![], 
+            expected_instructions :vec![
+                OpCode::True.make(),
+                OpCode::False.make(),
+                OpCode::Equal.make(),
+                OpCode::Pop.make(),
+            ],
+        },
     ];
     for test in tests {
         test_compile(test);

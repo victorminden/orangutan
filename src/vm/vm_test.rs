@@ -44,13 +44,30 @@ fn integer_arithmetic_test() {
 #[test]
 fn boolean_expression_test() {
     let tests = vec![
-        ("true", "true"),
-        ("false", "false"),
+        ("true", true),
+        ("false", false),
+        ("1 < 2", true),
+        ("1 > 2", false),
+        ("1 < 1", false),
+        ("1 > 1", false),
+        ("1 == 1", true),
+        ("1 != 1", false),
+        ("1 == 2", false),
+        ("1 != 2", true),
+        ("true == true", true),
+        ("false == false", true),
+        ("true == false", false),
+        ("true != false", true),
+        ("false != true", true),
+        ("(1 < 2) == true", true),
+        ("(1 < 2) == false", false),
+        ("(1 > 2) == true", false),
+        ("(1 > 2) == false", true),
     ];
     for (test_input, expected) in tests {
         match run(test_input) {
-            Ok(obj) => assert_eq!(obj.to_string(), expected.to_string()),
-            _ => panic!("VM error!"),
+            Ok(obj) => assert_eq!(obj.to_string(), expected.to_string(), "Wrong output on input \"{}\"!", test_input),
+            _ => panic!(format!("VM error on input {}!", test_input)),
         }
     }
 }

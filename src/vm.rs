@@ -52,7 +52,6 @@ impl Vm {
                 _ => return Err(VmError::BadOpCode),
             };
             match op {
-                // TODO: Consider making a single 
                 OpCode::True => self.push(self.true_obj.clone())?,
                 OpCode::False => self.push(self.false_obj.clone())?,
                 OpCode::Pop => { self.pop()?; },
@@ -62,6 +61,7 @@ impl Vm {
                     self.push(self.constants[const_idx as usize].clone())?;
                 },
                 OpCode::Add | OpCode::Sub | OpCode::Mul | OpCode::Div => self.binary_op(op)?,
+                OpCode::Equal | OpCode::NotEqual | OpCode::GreaterThan => self.comparison_op(op)?,
                 _ => {},
             }
             ip += 1
@@ -69,6 +69,50 @@ impl Vm {
 
         let result = &*self.last_top();
         Ok(result.clone())
+    }
+
+    fn comparison_op(&mut self, op: OpCode) -> Result<(), VmError> {
+        let right = self.pop()?;
+        let left = self.pop()?;
+        match (&*left, &*right) {
+            (Object::Boolean(left), Object::Boolean(right)) => {
+                self.comparison_boolean_op(*left, op, *right)?;
+            },
+            (Object::Integer(left), Object::Integer(right)) => { 
+              self.comparison_integer_op(*left, op, *right)?;
+            },
+            _ => return Err(VmError::UnsupportedOperands)
+        }
+        Ok(())
+    }
+
+    fn comparison_boolean_op(&mut self, left: bool, op: OpCode, right: bool) -> Result<(), VmError> {
+        let result = match op {
+            OpCode::Equal => left == right,
+            OpCode::NotEqual => left != right,
+            _ => return Err(VmError::BadOpCode)
+        };
+        if result {
+            self.push(self.true_obj.clone())?;
+        } else {
+            self.push(self.false_obj.clone())?;
+        }
+        Ok(())
+    }
+
+    fn comparison_integer_op(&mut self, left: i64, op: OpCode, right: i64) -> Result<(), VmError> {
+        let result = match op {
+            OpCode::Equal => left == right,
+            OpCode::NotEqual => left != right,
+            OpCode::GreaterThan => left > right,
+            _ => return Err(VmError::BadOpCode)
+        };
+        if result {
+            self.push(self.true_obj.clone())?;
+        } else {
+            self.push(self.false_obj.clone())?;
+        }
+        Ok(())
     }
 
     fn binary_op(&mut self, op: OpCode) -> Result<(), VmError> {

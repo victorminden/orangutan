@@ -40,6 +40,9 @@ pub enum OpCode {
     Pop,
     True,
     False,
+    Equal,
+    NotEqual,
+    GreaterThan,
 }
 
 impl OpCode {
@@ -75,6 +78,18 @@ impl OpCode {
             },
             OpCode::False => Definition {
                 name: String::from("OpFalse"),
+                widths: vec![],
+            },
+            OpCode::Equal=> Definition {
+                name: String::from("OpEqual"),
+                widths: vec![],
+            },
+            OpCode::NotEqual => Definition {
+                name: String::from("OpNotEqual"),
+                widths: vec![],
+            },
+            OpCode::GreaterThan => Definition {
+                name: String::from("OpGreaterThan"),
                 widths: vec![],
             },
         }
