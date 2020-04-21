@@ -43,6 +43,8 @@ pub enum OpCode {
     Equal,
     NotEqual,
     GreaterThan,
+    Minus,
+    Bang,
 }
 
 impl OpCode {
@@ -90,6 +92,14 @@ impl OpCode {
             },
             OpCode::GreaterThan => Definition {
                 name: String::from("OpGreaterThan"),
+                widths: vec![],
+            },
+            OpCode::Minus => Definition {
+                name: String::from("OpMinus"),
+                widths: vec![],
+            },
+            OpCode::Bang => Definition {
+                name: String::from("OpBang"),
                 widths: vec![],
             },
         }

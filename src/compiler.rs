@@ -50,6 +50,15 @@ impl Compiler {
 
     fn compile_expression(&mut self, expression: &Expression) -> Result<(), CompileError> {
         match expression {
+            Expression::Prefix(prefix, expr) => {
+                self.compile_expression(expr)?;
+                let opcode = match prefix {
+                    Token::Bang => OpCode::Bang,
+                    Token::Minus => OpCode::Minus,
+                    _ => return Err(CompileError::UnknownOperator)
+                };
+                self.emit(opcode.make());
+            },
             Expression::Infix(left, infix, right) => {
                 match infix {
                     Token::LessThan => {
