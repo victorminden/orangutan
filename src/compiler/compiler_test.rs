@@ -125,3 +125,28 @@ fn integer_arithmetic_test() {
     }
 }
 
+#[test]
+fn boolean_test() {
+    let tests = vec![
+        TestCase {
+            input: "true", 
+            expected_constants: vec![], 
+            expected_instructions :vec![
+                OpCode::True.make(),
+                OpCode::Pop.make(),
+                ],
+        },
+        TestCase {
+            input: "false", 
+            expected_constants: vec![], 
+            expected_instructions :vec![
+                OpCode::False.make(),
+                OpCode::Pop.make(),
+                ],
+        },
+    ];
+    for test in tests {
+        test_compile(test);
+    }
+}
+

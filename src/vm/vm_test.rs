@@ -40,3 +40,17 @@ fn integer_arithmetic_test() {
         }
     }
 }
+
+#[test]
+fn boolean_expression_test() {
+    let tests = vec![
+        ("true", "true"),
+        ("false", "false"),
+    ];
+    for (test_input, expected) in tests {
+        match run(test_input) {
+            Ok(obj) => assert_eq!(obj.to_string(), expected.to_string()),
+            _ => panic!("VM error!"),
+        }
+    }
+}

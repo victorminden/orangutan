@@ -12,7 +12,6 @@ const STACK_SIZE: usize = 2048;
 pub enum VmError {
     UnknownError,
     BadOpCode,
-    EmptyStack,
     StackOverflow,
     StackUnderflow,
     UnsupportedOperands,
@@ -23,10 +22,11 @@ pub struct Vm {
     instructions: Instructions, 
     stack: Vec<Rc<Object>>, // TODO: Check type
     sp: usize,
+    true_obj: Rc<Object>,
+    false_obj: Rc<Object>,
 }
 
 impl Vm {
-
     pub fn new(bytecode: &Bytecode) -> Self {
         let mut ref_counted_constants = vec![];
         for constant in &bytecode.constants {
@@ -38,6 +38,9 @@ impl Vm {
             instructions: bytecode.instructions.clone(),
             stack: vec![null_ref.clone(); STACK_SIZE],
             sp: 0,
+            true_obj: Rc::new(Object::Boolean(true)),
+            false_obj: Rc::new(Object::Boolean(false)),
+
         }
     }
 
@@ -49,17 +52,16 @@ impl Vm {
                 _ => return Err(VmError::BadOpCode),
             };
             match op {
-                OpCode::Pop => {
-                    self.pop()?;
-                },
+                // TODO: Consider making a single 
+                OpCode::True => self.push(self.true_obj.clone())?,
+                OpCode::False => self.push(self.false_obj.clone())?,
+                OpCode::Pop => { self.pop()?; },
                 OpCode::Constant => {
                     let const_idx = read_uint16(self.instructions[ip+1], self.instructions[ip+2]);
                     ip += 2;
                     self.push(self.constants[const_idx as usize].clone())?;
                 },
-                OpCode::Add | OpCode::Sub | OpCode::Mul | OpCode::Div => {
-                    self.binary_op(op)?;
-                }
+                OpCode::Add | OpCode::Sub | OpCode::Mul | OpCode::Div => self.binary_op(op)?,
                 _ => {},
             }
             ip += 1

@@ -66,6 +66,10 @@ impl Compiler {
                 let int = Object::Integer(*int);
                 let instructions = OpCode::Constant.make_u16(self.add_constant(int));
                 self.emit(instructions);
+            },
+            Expression::BooleanLiteral(bool) => {
+                let opcode = if *bool {OpCode::True} else {OpCode::False};
+                self.emit(opcode.make());
             }
             _ => return Err(CompileError::UnknownError)
         }    

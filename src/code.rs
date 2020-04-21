@@ -38,6 +38,8 @@ pub enum OpCode {
     Mul,
     Div,
     Pop,
+    True,
+    False,
 }
 
 impl OpCode {
@@ -65,6 +67,14 @@ impl OpCode {
             },
             OpCode::Pop => Definition {
                 name: String::from("OpPop"),
+                widths: vec![],
+            },
+            OpCode::True => Definition {
+                name: String::from("OpTrue"),
+                widths: vec![],
+            },
+            OpCode::False => Definition {
+                name: String::from("OpFalse"),
                 widths: vec![],
             },
         }
