@@ -60,8 +60,27 @@ impl Vm {
                     ip += 2;
                     self.push(self.constants[const_idx as usize].clone())?;
                 },
+                OpCode::Bang => {
+                    let result = match &*self.pop()? {
+                        Object::Boolean(val) => !val,
+                        _ => false,
+                    };
+                    if result {
+                        self.push(self.true_obj.clone())?;
+                    } else {
+                        self.push(self.false_obj.clone())?;
+                    }
+                    
+                },
                 OpCode::Add | OpCode::Sub | OpCode::Mul | OpCode::Div => self.binary_op(op)?,
                 OpCode::Equal | OpCode::NotEqual | OpCode::GreaterThan => self.comparison_op(op)?,
+                OpCode::Minus => {
+                    let value = match &*self.pop()? {
+                        Object::Integer(val) => *val,
+                        _ => return Err(VmError::UnsupportedOperands),
+                    };
+                    self.push(Rc::new(Object::Integer(-value)))?;
+                },
                 _ => {},
             }
             ip += 1
