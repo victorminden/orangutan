@@ -3,7 +3,7 @@ use super::*;
 use crate::ast::Program;
 use crate::lexer::Lexer;
 use crate::parser::Parser;
-use crate::code::{OpCode, Constant};
+use crate::code::{OpCode, Constant, disassemble};
 
 struct TestCase<'a> {
     input: &'a str,
@@ -33,10 +33,11 @@ fn test_instructions(want: Vec<Instructions>, got: Instructions) {
     for inst in want {
         catted_want.extend(inst);
     }
-    assert_eq!(catted_want.len(), got.len());
+    
     for (w, g) in catted_want.iter().zip(got.iter()) {
-        assert_eq!(w, g);
+        assert_eq!(w, g, "\n\nwant: \n{}, \n\ngot: \n{}", disassemble(&catted_want), disassemble(&got));
     }
+    assert_eq!(catted_want.len(), got.len());
 }
 
 fn test_constants(want: Vec<Constant>, got: Vec<Constant>) {
@@ -232,3 +233,44 @@ fn boolean_test() {
     }
 }
 
+#[test]
+fn conditionals_test() {
+    let tests = vec![
+        TestCase {
+            input: "if (true) { 10 }; 3333;", 
+            expected_constants: vec![
+                Constant::Integer(10),
+                Constant::Integer(3333),
+            ], 
+            expected_instructions :vec![
+                OpCode::True.make(),
+                OpCode::JumpNotTruthy.make_u16(7),
+                OpCode::Constant.make_u16(0),
+                OpCode::Pop.make(),
+                OpCode::Constant.make_u16(1),
+                OpCode::Pop.make(),
+                ],
+        },
+        TestCase {
+            input: "if (true) { 10 } else { 20 }; 3333;", 
+            expected_constants: vec![
+                Constant::Integer(10),
+                Constant::Integer(20),
+                Constant::Integer(3333),
+            ], 
+            expected_instructions :vec![
+                OpCode::True.make(),
+                OpCode::JumpNotTruthy.make_u16(10),
+                OpCode::Constant.make_u16(0),
+                OpCode::Jump.make_u16(13),
+                OpCode::Constant.make_u16(1),
+                OpCode::Pop.make(),
+                OpCode::Constant.make_u16(2),
+                OpCode::Pop.make(),
+                ],
+        },
+    ];
+    for test in tests {
+        test_compile(test);
+    }
+}

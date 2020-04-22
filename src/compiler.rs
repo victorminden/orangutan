@@ -2,13 +2,24 @@
 mod compiler_test;
 
 use crate::code::{Instructions, Constant, Bytecode, OpCode};
-use crate::ast::{Program, Statement, Expression};
+use crate::ast::{Program, Statement, Expression, BlockStatement};
 use crate::object::Object;
 use crate::token::Token;
+
+use std::convert::TryFrom;
+use std::mem;
+
+#[derive(PartialEq, Eq)]
+pub struct EmittedInstruction {
+    pub opcode: OpCode,
+    pub position: usize,
+}
 
 pub struct Compiler {
     instructions: Instructions,
     constants: Vec<Constant>,
+    last_instruction: Option<EmittedInstruction>,
+    previous_instruction: Option<EmittedInstruction>,
 } 
 
 #[derive(Debug)]
@@ -19,7 +30,12 @@ pub enum CompileError {
 
 impl Compiler {
     pub fn new() -> Self {
-        Compiler { instructions: Instructions::new(), constants: vec![] }
+        Compiler { 
+            instructions: Instructions::new(), 
+            constants: vec![],
+            last_instruction: None,
+            previous_instruction: None,
+        }
     }
 
     // TODO: Determine if bytecode can return a reference / take ownership.
@@ -37,6 +53,13 @@ impl Compiler {
         Ok(self.bytecode())
     }
 
+    pub fn compile_block_statement(&mut self, bs: &BlockStatement) -> Result<(), CompileError> {
+        for statement in &bs.statements {
+            self.compile_statement(statement)?;
+        }
+        Ok(())
+    }
+
     fn compile_statement(&mut self, statement: &Statement) -> Result<(), CompileError> {
         match statement {
             Statement::Expression(expr) => {
@@ -50,6 +73,34 @@ impl Compiler {
 
     fn compile_expression(&mut self, expression: &Expression) -> Result<(), CompileError> {
         match expression {
+            Expression::If(conditional, consequence, alternative) => {
+                self.compile_expression(conditional)?;
+                let jump_not_truthy_pos = self.emit(OpCode::JumpNotTruthy.make_u16(9999));
+                self.compile_block_statement(&consequence)?;
+                self.remove_last_pop();
+                match alternative {
+                    None => {
+                        self.replace_instructions(
+                            jump_not_truthy_pos, 
+                            OpCode::JumpNotTruthy.make_u16(self.instructions.len() as u16),
+                        );
+                    }
+                    Some(alt) => {
+                        let jump_pos = self.emit(OpCode::Jump.make_u16(9999));
+                        self.replace_instructions(
+                            jump_not_truthy_pos, 
+                            OpCode::JumpNotTruthy.make_u16(self.instructions.len() as u16),
+                        );
+                        self.compile_block_statement(&alt)?;
+                        self.remove_last_pop();
+                        self.replace_instructions(
+                            jump_pos, 
+                            OpCode::Jump.make_u16(self.instructions.len() as u16),
+                        );
+                    },
+                }
+                
+            },
             Expression::Prefix(prefix, expr) => {
                 self.compile_expression(expr)?;
                 let opcode = match prefix {
@@ -111,7 +162,33 @@ impl Compiler {
     }
 
     fn emit(&mut self, ins: Instructions) -> usize {
-        return self.add_instruction(ins);
+        // TODO: Unwrap is Unsafe.
+        let opcode = OpCode::try_from(ins[0]).unwrap();
+        let pos = self.add_instruction(ins);
+        self.set_last_instruction(opcode, pos);
+        pos
+    }
+
+    fn set_last_instruction(&mut self, opcode: OpCode, position: usize) {
+        self.previous_instruction = mem::replace(
+            &mut self.last_instruction,
+            Some(EmittedInstruction { opcode, position }),
+        );
+    }
+
+    fn remove_last_pop(&mut self) {
+        if let Some(inst) = &self.last_instruction {
+            if inst.opcode != OpCode::Pop { return }
+            self.last_instruction  = mem::replace(&mut self.previous_instruction, None);
+            self.instructions.truncate(self.instructions.len()-1);
+        }
+    }
+
+    fn replace_instructions(&mut self, pos: usize, new_instructions: Instructions) {
+        // TODO: not safe.
+        for (i, inst) in new_instructions.iter().enumerate() {
+            self.instructions[pos + i] = *inst;
+        }
     }
 
 }

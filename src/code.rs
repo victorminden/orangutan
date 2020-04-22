@@ -45,6 +45,8 @@ pub enum OpCode {
     GreaterThan,
     Minus,
     Bang,
+    Jump,
+    JumpNotTruthy,
 }
 
 impl OpCode {
@@ -52,6 +54,14 @@ impl OpCode {
         match self {
             OpCode::Constant => Definition {
                 name: String::from("OpConstant"),
+                widths: vec![2],
+            },
+            OpCode::Jump => Definition {
+                name: String::from("OpJump"),
+                widths: vec![2],
+            },
+            OpCode::JumpNotTruthy => Definition {
+                name: String::from("OpJumpNotTruthy"),
                 widths: vec![2],
             },
             OpCode::Add => Definition {
