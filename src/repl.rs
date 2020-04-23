@@ -7,8 +7,10 @@ use crate::lexer;
 use crate::parser;
 use crate::evaluator;
 use crate::compiler;
+use crate::code::Constant;
 use crate::vm;
 use crate::object::Environment;
+use crate::object::Object;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::io;
@@ -76,6 +78,10 @@ fn start_with_interpreter() -> io::Result<()> {
 }
 
 fn start_with_compiler() -> io::Result<()> {
+    let constants: Rc<RefCell<Vec<Constant>>> = Rc::new(RefCell::new(vec![]));
+    let symbol_table = Rc::new(RefCell::new(compiler::SymbolTable::new()));
+    let globals: Rc<RefCell<Vec<Rc<Object>>>> = Rc::new(RefCell::new(vec![]));
+
     loop {
         print!("{}", PROMPT);
         io::stdout().flush()?;
@@ -92,7 +98,7 @@ fn start_with_compiler() -> io::Result<()> {
             }
         };
 
-        let mut compiler = compiler::Compiler::new();
+        let mut compiler = compiler::Compiler::new_with_state(symbol_table.clone(), constants.clone());
         let bytecode = match compiler.compile(&program) {
             Ok(bc) => bc,
             _ => {
@@ -101,7 +107,7 @@ fn start_with_compiler() -> io::Result<()> {
             }
         };
 
-        let mut vm = vm::Vm::new(&bytecode);
+        let mut vm = vm::Vm::new_with_globals_store(&bytecode, globals.clone());
         match vm.run() {
             Ok(obj) => println!("{}", obj),
             _ => println!("Error executing bytecode!"),

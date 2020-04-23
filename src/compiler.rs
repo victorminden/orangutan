@@ -6,7 +6,7 @@ use crate::code::{Instructions, Constant, Bytecode, OpCode};
 use crate::ast::{Program, Statement, Expression, BlockStatement};
 use crate::object::Object;
 use crate::token::Token;
-use self::symbol_table::*;
+pub use self::symbol_table::*;
 
 use std::convert::TryFrom;
 use std::mem;
@@ -21,7 +21,7 @@ pub struct EmittedInstruction {
 
 pub struct Compiler {
     instructions: Instructions,
-    constants: Vec<Constant>,
+    constants: Rc<RefCell<Vec<Constant>>>,
     last_instruction: Option<EmittedInstruction>,
     previous_instruction: Option<EmittedInstruction>,
     symbol_table: Rc<RefCell<SymbolTable>>,
@@ -38,10 +38,20 @@ impl Compiler {
     pub fn new() -> Self {
         Compiler { 
             instructions: Instructions::new(), 
-            constants: vec![],
+            constants: Rc::new(RefCell::new(Vec::new())),
             last_instruction: None,
             previous_instruction: None,
             symbol_table: Rc::new(RefCell::new(SymbolTable::new())),
+        }
+    }
+
+    pub fn new_with_state(symbol_table: Rc<RefCell<SymbolTable>>, constants: Rc<RefCell<Vec<Constant>>>) -> Self {
+        Compiler {
+            instructions: Instructions::new(),
+            constants,
+            last_instruction: None,
+            previous_instruction: None,
+            symbol_table,
         }
     }
 
@@ -49,7 +59,7 @@ impl Compiler {
     pub fn bytecode(&self) -> Bytecode {
         Bytecode::new(
             self.instructions.clone(), 
-            self.constants.clone(),
+            self.constants.borrow().clone(),
         )
     }
 
@@ -167,8 +177,8 @@ impl Compiler {
     }
 
     fn add_constant(&mut self, constant: Constant) -> u16 {
-        self.constants.push(constant);
-        return (self.constants.len() - 1) as u16;
+        self.constants.borrow_mut().push(constant);
+        return (self.constants.borrow().len() - 1) as u16;
     }
 
     // TODO: Determine if this function can be removed entirely.

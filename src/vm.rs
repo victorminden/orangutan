@@ -5,6 +5,7 @@ use crate::object::Object;
 use crate::code::{Bytecode, Constant, Instructions, OpCode, read_uint16, disassemble};
 use std::convert::TryFrom;
 use std::rc::Rc;
+use std::cell::RefCell;
 
 const STACK_SIZE: usize = 2048;
 
@@ -20,7 +21,7 @@ pub enum VmError {
 pub struct Vm {
     constants: Vec<Rc<Constant>>,
     instructions: Instructions, 
-    globals: Vec<Rc<Object>>,
+    globals: Rc<RefCell<Vec<Rc<Object>>>>,
     stack: Vec<Rc<Object>>, // TODO: Check type
     sp: usize,
     // TODO: Determine a better way to have these constants.
@@ -39,7 +40,26 @@ impl Vm {
         Vm {
             constants: ref_counted_constants,
             instructions: bytecode.instructions.clone(),
-            globals: vec![null_ref.clone(); STACK_SIZE],
+            globals: Rc::new(RefCell::new(vec![])),
+            stack: vec![null_ref.clone(); STACK_SIZE],
+            sp: 0,
+            true_obj: Rc::new(Object::Boolean(true)),
+            false_obj: Rc::new(Object::Boolean(false)),
+            null_obj: null_ref.clone(),
+        }
+    }
+
+    // TODO: Deduplicate with new.
+    pub fn new_with_globals_store(bytecode: &Bytecode, store: Rc<RefCell<Vec<Rc<Object>>>>) -> Self {
+        let mut ref_counted_constants = vec![];
+        for constant in &bytecode.constants {
+            ref_counted_constants.push(Rc::new(constant.clone()));
+        }
+        let null_ref = Rc::new(Object::Null);
+        Vm {
+            constants: ref_counted_constants,
+            instructions: bytecode.instructions.clone(),
+            globals: store,
             stack: vec![null_ref.clone(); STACK_SIZE],
             sp: 0,
             true_obj: Rc::new(Object::Boolean(true)),
@@ -60,12 +80,12 @@ impl Vm {
                     let global_idx = read_uint16(self.instructions[ip+1], self.instructions[ip+2]);
                     ip += 2;
                     let element = self.pop()?;
-                    self.globals.insert(global_idx as usize, element);
+                    self.globals.borrow_mut().insert(global_idx as usize, element);
                 },
                 OpCode::GetGlobal => {
                     let global_idx = read_uint16(self.instructions[ip+1], self.instructions[ip+2]);
                     ip += 2;
-                    let element = match self.globals.get(global_idx as usize) {
+                    let element = match self.globals.borrow().get(global_idx as usize) {
                         Some(elem) => elem.clone(),
                         _ => return Err(VmError::UnknownError),
                     };
