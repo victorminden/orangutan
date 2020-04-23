@@ -273,3 +273,55 @@ fn conditionals_test() {
         test_compile(test);
     }
 }
+
+#[test]
+fn global_let_statement_test() {
+    let tests = vec![
+        TestCase {
+            input: "let one = 1;
+            let two = 2;", 
+            expected_constants: vec![
+                Constant::Integer(1),
+                Constant::Integer(2),
+            ], 
+            expected_instructions :vec![
+                OpCode::Constant.make_u16(0),
+                OpCode::SetGlobal.make_u16(0),
+                OpCode::Constant.make_u16(1),
+                OpCode::SetGlobal.make_u16(1),
+            ],
+        },
+        TestCase {
+            input: "let one = 1;
+            one;", 
+            expected_constants: vec![
+                Constant::Integer(1),
+            ], 
+            expected_instructions :vec![
+                OpCode::Constant.make_u16(0),
+                OpCode::SetGlobal.make_u16(0),
+                OpCode::GetGlobal.make_u16(0),
+                OpCode::Pop.make(),
+            ],
+        },
+        TestCase {
+            input: "let one = 1;
+            let two = one;
+            two;", 
+            expected_constants: vec![
+                Constant::Integer(1),
+            ], 
+            expected_instructions :vec![
+                OpCode::Constant.make_u16(0),
+                OpCode::SetGlobal.make_u16(0),
+                OpCode::GetGlobal.make_u16(0),
+                OpCode::SetGlobal.make_u16(1),
+                OpCode::GetGlobal.make_u16(1),
+                OpCode::Pop.make(),
+            ],
+        },
+    ];
+    for test in tests {
+        test_compile(test);
+    }
+}

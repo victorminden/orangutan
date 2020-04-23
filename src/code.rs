@@ -48,11 +48,21 @@ pub enum OpCode {
     Bang,
     Jump,
     JumpNotTruthy,
+    GetGlobal,
+    SetGlobal,
 }
 
 impl OpCode {
     pub fn definition(&self) -> Definition {
         match self {
+            OpCode::GetGlobal => Definition {
+                name: String::from("OpGetGlobal"),
+                widths: vec![2],
+            },
+            OpCode::SetGlobal => Definition {
+                name: String::from("OpSetGlobal"),
+                widths: vec![2],
+            },
             OpCode::Constant => Definition {
                 name: String::from("OpConstant"),
                 widths: vec![2],

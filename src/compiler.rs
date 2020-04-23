@@ -1,13 +1,17 @@
 #[cfg(test)]
 mod compiler_test;
+mod symbol_table;
 
 use crate::code::{Instructions, Constant, Bytecode, OpCode};
 use crate::ast::{Program, Statement, Expression, BlockStatement};
 use crate::object::Object;
 use crate::token::Token;
+use self::symbol_table::*;
 
 use std::convert::TryFrom;
 use std::mem;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 #[derive(PartialEq, Eq)]
 pub struct EmittedInstruction {
@@ -20,12 +24,14 @@ pub struct Compiler {
     constants: Vec<Constant>,
     last_instruction: Option<EmittedInstruction>,
     previous_instruction: Option<EmittedInstruction>,
+    symbol_table: Rc<RefCell<SymbolTable>>,
 } 
 
 #[derive(Debug)]
 pub enum CompileError {
     UnknownError,
     UnknownOperator,
+    SymbolNotFound,
 }
 
 impl Compiler {
@@ -35,6 +41,7 @@ impl Compiler {
             constants: vec![],
             last_instruction: None,
             previous_instruction: None,
+            symbol_table: Rc::new(RefCell::new(SymbolTable::new())),
         }
     }
 
@@ -66,6 +73,11 @@ impl Compiler {
                 self.compile_expression(expr)?;
                 self.emit(OpCode::Pop.make());
             },
+            Statement::Let(name, expr) => {
+                self.compile_expression(expr)?;
+                let symbol = *self.symbol_table.borrow_mut().define(name);
+                self.emit(OpCode::SetGlobal.make_u16(symbol.index));
+            },
             _ => return Err(CompileError::UnknownError),
         }
         Ok(())
@@ -73,6 +85,14 @@ impl Compiler {
 
     fn compile_expression(&mut self, expression: &Expression) -> Result<(), CompileError> {
         match expression {
+            Expression::Ident(name) => {
+                // Use a separate statement to catch the result so that we can unborrow the symbol_table.
+                let symbol_result = self.symbol_table.borrow().resolve(name);
+                match symbol_result {
+                    Ok(symbol) => { self.emit(OpCode::GetGlobal.make_u16(symbol.index)); },
+                    Err(_) => return Err(CompileError::SymbolNotFound),
+                }
+            },
             Expression::If(conditional, consequence, alternative) => {
                 self.compile_expression(conditional)?;
                 let jump_not_truthy_pos = self.emit(OpCode::JumpNotTruthy.make_u16(9999));
