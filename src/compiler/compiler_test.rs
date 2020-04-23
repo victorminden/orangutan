@@ -45,7 +45,10 @@ fn test_constants(want: Vec<Constant>, got: Vec<Constant>) {
         match (w, g) {
             (Constant::Integer(want), Constant::Integer(got)) => {
                 assert_eq!(want, got);
-            }
+            },
+            (Constant::Str(want), Constant::Str(got)) => {
+                assert_eq!(want, got);
+            },
             _ => panic!("Unexpected constants!")
         }
     }
@@ -317,6 +320,39 @@ fn global_let_statement_test() {
                 OpCode::GetGlobal.make_u16(0),
                 OpCode::SetGlobal.make_u16(1),
                 OpCode::GetGlobal.make_u16(1),
+                OpCode::Pop.make(),
+            ],
+        },
+    ];
+    for test in tests {
+        test_compile(test);
+    }
+}
+
+
+#[test]
+fn string_expression_test() {
+    let tests = vec![
+        TestCase {
+            input: "\"monkey\"", 
+            expected_constants: vec![
+                Constant::Str(String::from("monkey")),
+            ], 
+            expected_instructions :vec![
+                OpCode::Constant.make_u16(0),
+                OpCode::Pop.make(),
+            ],
+        },
+        TestCase {
+            input: "\"mon\" + \"key\"", 
+            expected_constants: vec![
+                Constant::Str(String::from("mon")),
+                Constant::Str(String::from("key")),
+            ], 
+            expected_instructions :vec![
+                OpCode::Constant.make_u16(0),
+                OpCode::Constant.make_u16(1),
+                OpCode::Add.make(),
                 OpCode::Pop.make(),
             ],
         },

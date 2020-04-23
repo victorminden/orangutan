@@ -193,6 +193,9 @@ impl Vm {
             (Object::Integer(left), Object::Integer(right)) => { 
               self.binary_integer_op(*left, op, *right)?;
             },
+            (Object::Str(left), Object::Str(right)) => {
+                self.binary_string_op(left, op, right)?;
+            },
             _ => return Err(VmError::UnsupportedOperands)
         }
         Ok(())
@@ -207,6 +210,15 @@ impl Vm {
             _ => return Err(VmError::BadOpCode)
         };
         self.push(Rc::new(Object::Integer(result)))?;
+        Ok(())
+    }
+
+    fn binary_string_op(&mut self, left: &String, op: OpCode, right: &String) -> Result<(), VmError> {
+        let result = match op {
+            OpCode::Add => format!("{}{}", left, right),
+            _ => return Err(VmError::BadOpCode)
+        };
+        self.push(Rc::new(Object::Str(result)))?;
         Ok(())
     }
 

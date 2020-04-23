@@ -122,3 +122,18 @@ fn global_let_test() {
         }
     }
 }
+
+#[test]
+fn string_expression_test() {
+    let tests = vec![
+        ("\"monkey\"", "monkey"),
+        ("\"mon\" + \"key\"", "monkey"),
+        ("\"mon\" + \"key\" + \"banana\"", "monkeybanana"),
+    ];
+    for (test_input, expected) in tests {
+        match run(test_input) {
+            Ok(Object::Str(string)) => assert_eq!(string.to_string(), expected.to_string()),
+            _ => panic!("VM error!"),
+        }
+    }
+}
