@@ -20,6 +20,7 @@ pub enum VmError {
 pub struct Vm {
     constants: Vec<Rc<Constant>>,
     instructions: Instructions, 
+    globals: Vec<Rc<Object>>,
     stack: Vec<Rc<Object>>, // TODO: Check type
     sp: usize,
     // TODO: Determine a better way to have these constants.
@@ -38,6 +39,7 @@ impl Vm {
         Vm {
             constants: ref_counted_constants,
             instructions: bytecode.instructions.clone(),
+            globals: vec![null_ref.clone(); STACK_SIZE],
             stack: vec![null_ref.clone(); STACK_SIZE],
             sp: 0,
             true_obj: Rc::new(Object::Boolean(true)),
@@ -54,6 +56,21 @@ impl Vm {
                 _ => return Err(VmError::BadOpCode),
             };
             match op {
+                OpCode::SetGlobal => {
+                    let global_idx = read_uint16(self.instructions[ip+1], self.instructions[ip+2]);
+                    ip += 2;
+                    let element = self.pop()?;
+                    self.globals.insert(global_idx as usize, element);
+                },
+                OpCode::GetGlobal => {
+                    let global_idx = read_uint16(self.instructions[ip+1], self.instructions[ip+2]);
+                    ip += 2;
+                    let element = match self.globals.get(global_idx as usize) {
+                        Some(elem) => elem.clone(),
+                        _ => return Err(VmError::UnknownError),
+                    };
+                    self.push(element)?;
+                },
                 OpCode::True => self.push(self.true_obj.clone())?,
                 OpCode::False => self.push(self.false_obj.clone())?,
                 OpCode::Null => self.push(self.null_obj.clone())?,

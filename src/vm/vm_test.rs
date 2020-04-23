@@ -106,3 +106,19 @@ fn conditional_test() {
         }
     }
 }
+
+#[test]
+fn global_let_test() {
+    let tests = vec![
+        ("let one = 1; one", 1),
+        ("let one = 1; let two = 2; one + two", 3),
+        ("let one = 1; let two = one + one; one + two", 3),
+    ];
+    for (test_input, expected) in tests {
+        match run(test_input) {
+            Ok(Object::Null) => assert_eq!(-1, expected, "Wrong output on input \"{}\"!", test_input),
+            Ok(obj) => assert_eq!(obj.to_string(), expected.to_string(), "Wrong output on input \"{}\"!", test_input),
+            _ => panic!(format!("VM error on input \"{}\"!", test_input)),
+        }
+    }
+}
