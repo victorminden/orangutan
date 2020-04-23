@@ -137,3 +137,19 @@ fn string_expression_test() {
         }
     }
 }
+
+#[test]
+fn array_literal_test() {
+    let tests = vec![
+        ("[]", "[]"),
+        ("[1,2,3]", "[1, 2, 3]"),
+        ("[1+2,3+4,5*6]", "[3, 7, 30]"),
+    ];
+    for (test_input, expected) in tests {
+        if let Ok(obj) = run(test_input) {
+            assert_eq!(obj.to_string(), expected.to_string())
+        } else {
+            panic!("VM error!");
+        }
+    }
+}

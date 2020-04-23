@@ -76,6 +76,18 @@ impl Vm {
                 _ => return Err(VmError::BadOpCode),
             };
             match op {
+                OpCode::Array => {
+                    let num_elements = read_uint16(self.instructions[ip+1], self.instructions[ip+2]);
+                    ip += 2;
+                    let mut elements = Vec::with_capacity(num_elements as usize);
+                    for _ in 0..num_elements {
+                        // TODO: If we modify the array class to hold Rc elements, we don't have to clone here.
+                        elements.push((*self.pop()?).clone());
+                    }
+                    elements.reverse();
+                    let array = Rc::new(Object::Array(elements));
+                    self.push(array)?;
+                },
                 OpCode::SetGlobal => {
                     let global_idx = read_uint16(self.instructions[ip+1], self.instructions[ip+2]);
                     ip += 2;
