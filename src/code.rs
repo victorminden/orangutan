@@ -50,11 +50,16 @@ pub enum OpCode {
     JumpNotTruthy,
     GetGlobal,
     SetGlobal,
+    Array,
 }
 
 impl OpCode {
     pub fn definition(&self) -> Definition {
         match self {
+            OpCode::Array => Definition {
+                name: String::from("OpArray"),
+                widths: vec![2],
+            },
             OpCode::GetGlobal => Definition {
                 name: String::from("OpGetGlobal"),
                 widths: vec![2],

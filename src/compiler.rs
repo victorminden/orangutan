@@ -175,7 +175,13 @@ impl Compiler {
             Expression::BooleanLiteral(bool) => {
                 let opcode = if *bool {OpCode::True} else {OpCode::False};
                 self.emit(opcode.make());
-            }
+            },
+            Expression::ArrayLiteral(elements) => {
+                for expr in elements {
+                    self.compile_expression(expr)?;
+                }
+                self.emit(OpCode::Array.make_u16(elements.len() as u16));
+            },
             _ => return Err(CompileError::UnknownError)
         }    
         Ok(())
