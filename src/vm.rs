@@ -2,7 +2,7 @@
 mod vm_test;
 
 use crate::object::Object;
-use crate::code::{Bytecode, Constant, Instructions, OpCode, read_uint16};
+use crate::code::{Bytecode, Constant, Instructions, OpCode, read_uint16, disassemble};
 use std::convert::TryFrom;
 use std::rc::Rc;
 
@@ -22,8 +22,10 @@ pub struct Vm {
     instructions: Instructions, 
     stack: Vec<Rc<Object>>, // TODO: Check type
     sp: usize,
+    // TODO: Determine a better way to have these constants.
     true_obj: Rc<Object>,
     false_obj: Rc<Object>,
+    null_obj: Rc<Object>,
 }
 
 impl Vm {
@@ -40,7 +42,7 @@ impl Vm {
             sp: 0,
             true_obj: Rc::new(Object::Boolean(true)),
             false_obj: Rc::new(Object::Boolean(false)),
-
+            null_obj: null_ref.clone(),
         }
     }
 
@@ -54,6 +56,7 @@ impl Vm {
             match op {
                 OpCode::True => self.push(self.true_obj.clone())?,
                 OpCode::False => self.push(self.false_obj.clone())?,
+                OpCode::Null => self.push(self.null_obj.clone())?,
                 OpCode::Pop => { self.pop()?; },
                 OpCode::Constant => {
                     let const_idx = read_uint16(self.instructions[ip+1], self.instructions[ip+2]);
@@ -62,7 +65,7 @@ impl Vm {
                 },
                 OpCode::Bang => {
                     let result = match &*self.pop()? {
-                        Object::Boolean(val) => !val,
+                        Object::Boolean(false) | Object::Null => true,
                         _ => false,
                     };
                     if result {
@@ -80,6 +83,18 @@ impl Vm {
                         _ => return Err(VmError::UnsupportedOperands),
                     };
                     self.push(Rc::new(Object::Integer(-value)))?;
+                },
+                OpCode::Jump => {
+                    let jump_pos = read_uint16(self.instructions[ip+1], self.instructions[ip+2]);
+                    ip = (jump_pos - 1) as usize;
+                },
+                OpCode::JumpNotTruthy => {
+                    let jump_pos = read_uint16(self.instructions[ip+1], self.instructions[ip+2]);
+                    ip += 2;
+                    let value = &*self.pop()?;
+                    if !value.is_truthy() {
+                        ip = (jump_pos - 1) as usize;
+                    }
                 },
                 _ => {},
             }
@@ -175,7 +190,6 @@ impl Vm {
         if self.sp == 0 {
             return Err(VmError::StackUnderflow);
         }
-        // TODO: Remove slow clones.
         let obj = self.stack[self.sp - 1].clone();
         self.sp -= 1;
         Ok(obj)

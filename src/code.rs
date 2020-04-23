@@ -32,6 +32,7 @@ pub struct Definition {
 #[derive(IntoPrimitive, TryFromPrimitive, Debug, Eq, PartialEq)]
 #[repr(u8)]
 pub enum OpCode {
+    Null,
     Constant,
     Add,
     Sub,
@@ -63,6 +64,10 @@ impl OpCode {
             OpCode::JumpNotTruthy => Definition {
                 name: String::from("OpJumpNotTruthy"),
                 widths: vec![2],
+            },
+            OpCode::Null => Definition {
+                name: String::from("OpNull"),
+                widths: vec![],
             },
             OpCode::Add => Definition {
                 name: String::from("OpAdd"),
@@ -177,7 +182,7 @@ mod tests {
     #[test]
     fn opcode_test() {
         let tests = vec![
-            (0u8, OpCode::Constant),
+            (1u8, OpCode::Constant),
         ];
 
         assert_eq!(size_of::<OpCode>(), 1);

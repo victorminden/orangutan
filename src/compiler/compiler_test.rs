@@ -37,7 +37,7 @@ fn test_instructions(want: Vec<Instructions>, got: Instructions) {
     for (w, g) in catted_want.iter().zip(got.iter()) {
         assert_eq!(w, g, "\n\nwant: \n{}, \n\ngot: \n{}", disassemble(&catted_want), disassemble(&got));
     }
-    assert_eq!(catted_want.len(), got.len());
+    assert_eq!(catted_want.len(), got.len(),  "\n\nwant: \n{}, \n\ngot: \n{}", disassemble(&catted_want), disassemble(&got));
 }
 
 fn test_constants(want: Vec<Constant>, got: Vec<Constant>) {
@@ -244,19 +244,20 @@ fn conditionals_test() {
             ], 
             expected_instructions :vec![
                 OpCode::True.make(),
-                OpCode::JumpNotTruthy.make_u16(7),
+                OpCode::JumpNotTruthy.make_u16(10),
                 OpCode::Constant.make_u16(0),
+                OpCode::Jump.make_u16(11),
+                OpCode::Null.make(),
                 OpCode::Pop.make(),
                 OpCode::Constant.make_u16(1),
                 OpCode::Pop.make(),
                 ],
         },
         TestCase {
-            input: "if (true) { 10 } else { 20 }; 3333;", 
+            input: "if (true) { 10 } else { 20 };", 
             expected_constants: vec![
                 Constant::Integer(10),
                 Constant::Integer(20),
-                Constant::Integer(3333),
             ], 
             expected_instructions :vec![
                 OpCode::True.make(),
@@ -265,9 +266,7 @@ fn conditionals_test() {
                 OpCode::Jump.make_u16(13),
                 OpCode::Constant.make_u16(1),
                 OpCode::Pop.make(),
-                OpCode::Constant.make_u16(2),
-                OpCode::Pop.make(),
-                ],
+            ],
         },
     ];
     for test in tests {

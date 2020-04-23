@@ -73,11 +73,36 @@ fn boolean_expression_test() {
         ("!!true", true),
         ("!!false", false),
         ("!!5", true),
+        ("!(if (false) { 5; })", true),
     ];
     for (test_input, expected) in tests {
         match run(test_input) {
             Ok(obj) => assert_eq!(obj.to_string(), expected.to_string(), "Wrong output on input \"{}\"!", test_input),
             _ => panic!(format!("VM error on input {}!", test_input)),
+        }
+    }
+}
+
+
+#[test]
+fn conditional_test() {
+    let tests = vec![
+        ("if (true) { 10 }", 10),
+        ("if (true) { 10 } else { 20 }", 10),
+        ("if (false) { 10 } else { 20 } ", 20),
+        ("if (1) { 10 }", 10),
+        ("if (1 < 2) { 10 }", 10),
+        ("if (1 < 2) { 10 } else { 20 }", 10),
+        ("if (1 > 2) { 10 } else { 20 }", 20),
+        ("if (1 > 2) { 10 }", -1),
+        ("if (false) { 10 }", -1),
+        ("if ((if (false) { 10 })) { 10 } else { 20 }", 20),
+    ];
+    for (test_input, expected) in tests {
+        match run(test_input) {
+            Ok(Object::Null) => assert_eq!(-1, expected, "Wrong output on input \"{}\"!", test_input),
+            Ok(obj) => assert_eq!(obj.to_string(), expected.to_string(), "Wrong output on input \"{}\"!", test_input),
+            _ => panic!(format!("VM error on input \"{}\"!", test_input)),
         }
     }
 }

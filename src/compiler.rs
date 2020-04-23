@@ -78,27 +78,24 @@ impl Compiler {
                 let jump_not_truthy_pos = self.emit(OpCode::JumpNotTruthy.make_u16(9999));
                 self.compile_block_statement(&consequence)?;
                 self.remove_last_pop();
+                let jump_pos = self.emit(OpCode::Jump.make_u16(9999));
+                self.replace_instructions(
+                    jump_not_truthy_pos, 
+                    OpCode::JumpNotTruthy.make_u16(self.instructions.len() as u16),
+                );
                 match alternative {
                     None => {
-                        self.replace_instructions(
-                            jump_not_truthy_pos, 
-                            OpCode::JumpNotTruthy.make_u16(self.instructions.len() as u16),
-                        );
+                        self.emit(OpCode::Null.make());
                     }
                     Some(alt) => {
-                        let jump_pos = self.emit(OpCode::Jump.make_u16(9999));
-                        self.replace_instructions(
-                            jump_not_truthy_pos, 
-                            OpCode::JumpNotTruthy.make_u16(self.instructions.len() as u16),
-                        );
                         self.compile_block_statement(&alt)?;
                         self.remove_last_pop();
-                        self.replace_instructions(
-                            jump_pos, 
-                            OpCode::Jump.make_u16(self.instructions.len() as u16),
-                        );
                     },
                 }
+                self.replace_instructions(
+                    jump_pos, 
+                    OpCode::Jump.make_u16(self.instructions.len() as u16),
+                );
                 
             },
             Expression::Prefix(prefix, expr) => {
