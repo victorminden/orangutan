@@ -182,6 +182,13 @@ impl Compiler {
                 }
                 self.emit(OpCode::Array.make_u16(elements.len() as u16));
             },
+            Expression::HashLiteral(keys_and_values) => {
+                for (key, value) in keys_and_values {
+                    self.compile_expression(key)?;
+                    self.compile_expression(value)?;
+                }
+                self.emit(OpCode::Hash.make_u16(2 * keys_and_values.len() as u16));
+            },
             _ => return Err(CompileError::UnknownError)
         }    
         Ok(())

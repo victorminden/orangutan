@@ -51,11 +51,16 @@ pub enum OpCode {
     GetGlobal,
     SetGlobal,
     Array,
+    Hash,
 }
 
 impl OpCode {
     pub fn definition(&self) -> Definition {
         match self {
+            OpCode::Hash => Definition {
+                name: String::from("OpHash"),
+                widths: vec![2],
+            },
             OpCode::Array => Definition {
                 name: String::from("OpArray"),
                 widths: vec![2],

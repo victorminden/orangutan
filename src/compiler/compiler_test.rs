@@ -417,3 +417,60 @@ fn array_literal_test() {
         test_compile(test);
     }
 }
+
+#[test]
+fn hash_literal_test() {
+    let tests = vec![
+        TestCase {
+            input: "{}", 
+            expected_constants: vec![], 
+            expected_instructions :vec![
+                OpCode::Hash.make_u16(0),
+                OpCode::Pop.make(),
+            ],
+        },
+        TestCase {
+            input: "{1: 2, 3: 4}", 
+            expected_constants: vec![
+                Constant::Integer(1),
+                Constant::Integer(2),
+                Constant::Integer(3),
+                Constant::Integer(4),
+            ], 
+            expected_instructions :vec![
+                OpCode::Constant.make_u16(0),
+                OpCode::Constant.make_u16(1),
+                OpCode::Constant.make_u16(2),
+                OpCode::Constant.make_u16(3),
+                OpCode::Hash.make_u16(4),
+                OpCode::Pop.make(),
+            ],
+        },
+        TestCase {
+            input: "{1: 2 + 3, 4: 5 * 6}", 
+            expected_constants: vec![
+                Constant::Integer(1),
+                Constant::Integer(2),
+                Constant::Integer(3),
+                Constant::Integer(4),
+                Constant::Integer(5),
+                Constant::Integer(6),
+            ], 
+            expected_instructions :vec![
+                OpCode::Constant.make_u16(0),
+                OpCode::Constant.make_u16(1),
+                OpCode::Constant.make_u16(2),
+                OpCode::Add.make(),
+                OpCode::Constant.make_u16(3),
+                OpCode::Constant.make_u16(4),
+                OpCode::Constant.make_u16(5),
+                OpCode::Mul.make(),
+                OpCode::Hash.make_u16(4),
+                OpCode::Pop.make(),
+            ],
+        },
+    ];
+    for test in tests {
+        test_compile(test);
+    }
+}
