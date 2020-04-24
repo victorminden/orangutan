@@ -276,9 +276,7 @@ impl Vm {
                         };
                         self.push(obj)?;
                     },
-                    _ => { 
-                        return Err(VmError::UnsupportedOperands); 
-                    }
+                    _ => return Err(VmError::UnsupportedOperands)
                 }
             },
             _ => return Err(VmError::UnsupportedOperands)
