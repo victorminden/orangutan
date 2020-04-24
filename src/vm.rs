@@ -6,6 +6,7 @@ use crate::code::{Bytecode, Constant, Instructions, OpCode, read_uint16, disasse
 use std::convert::TryFrom;
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::collections::HashMap;
 
 const STACK_SIZE: usize = 2048;
 
@@ -76,6 +77,22 @@ impl Vm {
                 _ => return Err(VmError::BadOpCode),
             };
             match op {
+                OpCode::Hash => {
+                    let num_elements = read_uint16(self.instructions[ip+1], self.instructions[ip+2]);
+                    ip += 2;
+                    let mut hash_map = HashMap::new();
+                    for _ in 0..num_elements/2 {
+                        // TODO: Stop the cloning...
+                        let value = (*self.pop()?).clone();
+                        if let Ok(key) = (*self.pop()?).clone().to_hashable_object() {
+                            hash_map.insert(key, value);
+                        } else {
+                            return Err(VmError::UnsupportedOperands);
+                        }
+                    }
+                    let hash = Rc::new(Object::Hash(hash_map));
+                    self.push(hash)?;
+                },
                 OpCode::Array => {
                     let num_elements = read_uint16(self.instructions[ip+1], self.instructions[ip+2]);
                     ip += 2;

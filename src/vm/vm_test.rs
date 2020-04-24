@@ -153,3 +153,19 @@ fn array_literal_test() {
         }
     }
 }
+
+#[test]
+fn hash_literal_test() {
+    let tests = vec![
+        ("{}", "{}"),
+        ("{1: 2, 3: 4}", "{1: 2, 3: 4}"),
+        ("{1+1: 2+2, 3*3: 4*4}", "{2: 4, 9: 16}"),
+    ];
+    for (test_input, expected) in tests {
+        if let Ok(obj) = run(test_input) {
+            assert_eq!(obj.to_string(), expected.to_string())
+        } else {
+            panic!("VM error!");
+        }
+    }
+}
