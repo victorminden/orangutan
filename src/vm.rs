@@ -2,7 +2,7 @@
 mod vm_test;
 
 use crate::object::Object;
-use crate::code::{Bytecode, Constant, Instructions, OpCode, read_uint16, disassemble};
+use crate::code::{Bytecode, Constant, Instructions, OpCode, read_uint16};
 use std::convert::TryFrom;
 use std::rc::Rc;
 use std::cell::RefCell;

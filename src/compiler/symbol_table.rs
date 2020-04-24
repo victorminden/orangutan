@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::mem;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum SymbolScope {
