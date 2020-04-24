@@ -169,3 +169,26 @@ fn hash_literal_test() {
         }
     }
 }
+
+#[test]
+fn index_test() {
+    let tests = vec![
+        ("[1, 2, 3][1]", "2"),
+        ("[1, 2, 3][0 + 2]", "3"),
+        ("[[1, 1, 1]][0][0]", "1"),
+        ("[][0]", "null"),
+        ("[1, 2, 3][99]", "null"),
+        ("[1][-1]", "null"),
+        ("{1: 1, 2: 2}[1]", "1"),
+        ("{1: 1, 2: 2}[2]", "2"),
+        ("{1: 1}[0]", "null"),
+        ("{}[0]", "null"), 
+    ];
+    for (test_input, expected) in tests {
+        if let Ok(obj) = run(test_input) {
+            assert_eq!(obj.to_string(), expected.to_string())
+        } else {
+            panic!("VM error!");
+        }
+    }
+}

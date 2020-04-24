@@ -77,6 +77,11 @@ impl Vm {
                 _ => return Err(VmError::BadOpCode),
             };
             match op {
+                OpCode::Index => {
+                    let index = self.pop()?;
+                    let left = self.pop()?;
+                    self.index_expression(left, index)?;
+                },
                 OpCode::Hash => {
                     let num_elements = read_uint16(self.instructions[ip+1], self.instructions[ip+2]);
                     ip += 2;
@@ -250,6 +255,37 @@ impl Vm {
         self.push(Rc::new(Object::Str(result)))?;
         Ok(())
     }
+
+
+    fn index_expression(&mut self, left: Rc<Object>, index: Rc<Object>) -> Result<(), VmError> {
+        match (&*left, &*index) {
+            (Object::Array(elements), Object::Integer(idx)) => {
+                match elements.get(*idx as usize) {
+                    Some(thing) => {
+                        self.push(Rc::new(thing.clone()))?;
+                    },
+                    None => { self.push(self.null_obj.clone())?; }
+                }
+            },
+            (Object::Hash(keys_and_values), _) => {
+                match (*index).clone().to_hashable_object() {
+                    Ok(key) => {
+                        let obj = match keys_and_values.get(&key) {
+                            Some(elem) => Rc::new(elem.clone()),
+                            _ => self.null_obj.clone(),
+                        };
+                        self.push(obj)?;
+                    },
+                    _ => { 
+                        return Err(VmError::UnsupportedOperands); 
+                    }
+                }
+            },
+            _ => return Err(VmError::UnsupportedOperands)
+        }
+        Ok(())
+    }
+
 
     fn last_top(&self) -> Rc<Object> {
         self.stack[self.sp].clone()
