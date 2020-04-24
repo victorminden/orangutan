@@ -13,6 +13,7 @@ pub use self::environment::*;
 pub use self::built_in_functions::*;
 use crate::ast::BlockStatement;
 use crate::evaluator::EvalError;
+use crate::code::CompiledFunction;
 
 pub type BuiltInFunction = fn(Vec<Object>) -> Result<Object, EvalError>;
 pub type SharedEnvironment = Rc<RefCell<Environment>>;
@@ -48,6 +49,7 @@ pub enum Object {
     BuiltIn(BuiltInFunction),
     Array(Vec<Object>),
     Hash(HashMap<HashableObject, Object>),
+    CompiledFunction(CompiledFunction),
 }
 
 impl fmt::Display for Object {
@@ -73,6 +75,7 @@ impl fmt::Display for Object {
                 write!(f, "{{{}}}", formatted_elements.join(", "))
                 
             },
+            Object::CompiledFunction(func) => write!(f, "{}", func),
         }
     }
 }

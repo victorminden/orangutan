@@ -3,7 +3,7 @@ use super::*;
 use crate::ast::Program;
 use crate::lexer::Lexer;
 use crate::parser::Parser;
-use crate::code::{OpCode, Constant, disassemble};
+use crate::code::{OpCode, Constant, disassemble, CompiledFunction};
 
 struct TestCase<'a> {
     input: &'a str,
@@ -523,4 +523,38 @@ fn index_expression_test() {
     for test in tests {
         test_compile(test);
     }
+}
+
+#[test]
+fn function_test() {
+    let tests = vec![
+        TestCase {
+            input: "fn() { return 5 + 10; }", 
+            expected_constants: vec![
+                Constant::Integer(5),
+                Constant::Integer(10),
+                compiled_function(vec![
+                    OpCode::Constant.make_u16(0),
+                    OpCode::Constant.make_u16(1),
+                    OpCode::Add.make(),
+                    OpCode::ReturnValue.make(),
+                ]),
+            ], 
+            expected_instructions :vec![
+                OpCode::Constant.make_u16(2),
+                OpCode::Pop.make(),
+            ],
+        },
+    ];
+    for test in tests {
+        test_compile(test);
+    }
+}
+
+fn compiled_function(instructions: Vec<Instructions>) -> Constant {
+    Constant::CompiledFunction(
+        CompiledFunction {
+            instructions: instructions.concat(),
+        }
+    )
 }

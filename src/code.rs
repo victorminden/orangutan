@@ -4,11 +4,23 @@
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use std::convert::TryFrom;
 use crate::object::Object;
+use std::fmt;
 
 pub type Instructions = Vec<u8>;
 pub type ReadOnlyInstructions = [u8];
 // TODO: Determine a space-efficient way of representing constants.
 pub type Constant = Object;
+
+#[derive(Debug, Clone)]
+pub struct CompiledFunction {
+    pub instructions: Instructions,
+}
+
+impl fmt::Display for CompiledFunction {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "CompiledFunction[{}]", disassemble(&self.instructions))
+    }
+}
 
 pub struct Bytecode {
     pub instructions: Instructions,
@@ -34,6 +46,7 @@ pub struct Definition {
 pub enum OpCode {
     Null,
     Constant,
+    Call,
     Add,
     Sub,
     Mul,
@@ -53,11 +66,25 @@ pub enum OpCode {
     Array,
     Hash,
     Index,
+    ReturnValue,
+    Return,
 }
 
 impl OpCode {
     pub fn definition(&self) -> Definition {
         match self {
+            OpCode::Return => Definition {
+                name: String::from("OpReturn"),
+                widths: vec![],
+            },
+            OpCode::ReturnValue => Definition {
+                name: String::from("OpReturnValue"),
+                widths: vec![],
+            },
+            OpCode::Call => Definition {
+                name: String::from("OpCall"),
+                widths: vec![],
+            },
             OpCode::Index => Definition {
                 name: String::from("OpIndex"),
                 widths: vec![],
