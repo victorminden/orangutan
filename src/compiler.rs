@@ -13,6 +13,12 @@ use std::mem;
 use std::rc::Rc;
 use std::cell::RefCell;
 
+pub struct CompilationScope {
+    instructions: Instructions,
+    last_instruction: Option<EmittedInstruction>,
+    previous_instruction: Option<EmittedInstruction>,
+}
+
 #[derive(PartialEq, Eq)]
 pub struct EmittedInstruction {
     pub opcode: OpCode,
@@ -20,11 +26,10 @@ pub struct EmittedInstruction {
 }
 
 pub struct Compiler {
-    instructions: Instructions,
     constants: Rc<RefCell<Vec<Constant>>>,
-    last_instruction: Option<EmittedInstruction>,
-    previous_instruction: Option<EmittedInstruction>,
     symbol_table: Rc<RefCell<SymbolTable>>,
+    scopes: Vec<CompilationScope>,
+    scope_index: usize,
 } 
 
 #[derive(Debug)]
@@ -36,29 +41,32 @@ pub enum CompileError {
 
 impl Compiler {
     pub fn new() -> Self {
-        Compiler { 
-            instructions: Instructions::new(), 
-            constants: Rc::new(RefCell::new(Vec::new())),
-            last_instruction: None,
-            previous_instruction: None,
-            symbol_table: Rc::new(RefCell::new(SymbolTable::new())),
-        }
+        Compiler::new_with_state(Rc::new(RefCell::new(SymbolTable::new())), Rc::new(RefCell::new(Vec::new())))
     }
 
     pub fn new_with_state(symbol_table: Rc<RefCell<SymbolTable>>, constants: Rc<RefCell<Vec<Constant>>>) -> Self {
         Compiler {
-            instructions: Instructions::new(),
             constants,
-            last_instruction: None,
-            previous_instruction: None,
             symbol_table,
+            scopes: vec![
+                CompilationScope {
+                    instructions: vec![],
+                    last_instruction: None,
+                    previous_instruction: None,
+                },
+            ],
+            scope_index: 0,
         }
+    }
+
+    pub fn current_instructions(&self) -> &Instructions {
+        &self.scopes[self.scope_index].instructions
     }
 
     // TODO: Determine if bytecode can return a reference / take ownership.
     pub fn bytecode(&self) -> Bytecode {
         Bytecode::new(
-            self.instructions.clone(), 
+            self.current_instructions().clone(), 
             self.constants.borrow().clone(),
         )
     }
@@ -111,7 +119,7 @@ impl Compiler {
                 let jump_pos = self.emit(OpCode::Jump.make_u16(9999));
                 self.replace_instructions(
                     jump_not_truthy_pos, 
-                    OpCode::JumpNotTruthy.make_u16(self.instructions.len() as u16),
+                    OpCode::JumpNotTruthy.make_u16(self.current_instructions().len() as u16),
                 );
                 match alternative {
                     None => {
@@ -124,7 +132,7 @@ impl Compiler {
                 }
                 self.replace_instructions(
                     jump_pos, 
-                    OpCode::Jump.make_u16(self.instructions.len() as u16),
+                    OpCode::Jump.make_u16(self.current_instructions().len() as u16),
                 );
                 
             },
@@ -204,6 +212,21 @@ impl Compiler {
         return (self.constants.borrow().len() - 1) as u16;
     }
 
+    pub fn emit(&mut self, ins: Instructions) -> usize {
+        self.scopes[self.scope_index].emit(ins)
+    }
+
+
+    fn remove_last_pop(&mut self) {
+        self.scopes[self.scope_index].remove_last_pop()
+    }
+
+    fn replace_instructions(&mut self, pos: usize, new_instructions: Instructions) {
+        self.scopes[self.scope_index].replace_instructions(pos, new_instructions)
+    }
+}
+
+impl CompilationScope {
     // TODO: Determine if this function can be removed entirely.
     fn add_instruction(&mut self, ins: Instructions) -> usize {
         let pos_new_instruction = self.instructions.len();
