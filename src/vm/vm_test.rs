@@ -1,10 +1,8 @@
 use super::*;
 
-use crate::ast::Program;
 use crate::lexer::Lexer;
 use crate::parser::Parser;
 use crate::compiler::Compiler;
-use crate::code::{OpCode, Constant};
 use crate::object::Object;
 
 fn run(input: &str) -> Result<Object, VmError> {
