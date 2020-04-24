@@ -189,6 +189,11 @@ impl Compiler {
                 }
                 self.emit(OpCode::Hash.make_u16(2 * keys_and_values.len() as u16));
             },
+            Expression::Index(left, right) => {
+                self.compile_expression(&left)?;
+                self.compile_expression(&right)?;
+                self.emit(OpCode::Index.make());
+            },
             _ => return Err(CompileError::UnknownError)
         }    
         Ok(())

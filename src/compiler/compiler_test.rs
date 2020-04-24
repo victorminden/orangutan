@@ -474,3 +474,53 @@ fn hash_literal_test() {
         test_compile(test);
     }
 }
+
+
+#[test]
+fn index_expression_test() {
+    let tests = vec![
+        TestCase {
+            input: "[1,2,3][1+1]", 
+            expected_constants: vec![
+                Constant::Integer(1),
+                Constant::Integer(2),
+                Constant::Integer(3),
+                Constant::Integer(1),
+                Constant::Integer(1),
+            ], 
+            expected_instructions :vec![
+                OpCode::Constant.make_u16(0),
+                OpCode::Constant.make_u16(1),
+                OpCode::Constant.make_u16(2),
+                OpCode::Array.make_u16(3),
+                OpCode::Constant.make_u16(3),
+                OpCode::Constant.make_u16(4),
+                OpCode::Add.make(),
+                OpCode::Index.make(),
+                OpCode::Pop.make(),
+            ],
+        },
+        TestCase {
+            input: "{1: 2}[2-1]", 
+            expected_constants: vec![
+                Constant::Integer(1),
+                Constant::Integer(2),
+                Constant::Integer(2),
+                Constant::Integer(1),
+            ], 
+            expected_instructions :vec![
+                OpCode::Constant.make_u16(0),
+                OpCode::Constant.make_u16(1),
+                OpCode::Hash.make_u16(2),
+                OpCode::Constant.make_u16(2),
+                OpCode::Constant.make_u16(3),
+                OpCode::Sub.make(),
+                OpCode::Index.make(),
+                OpCode::Pop.make(),
+            ],
+        },
+    ];
+    for test in tests {
+        test_compile(test);
+    }
+}

@@ -52,11 +52,16 @@ pub enum OpCode {
     SetGlobal,
     Array,
     Hash,
+    Index,
 }
 
 impl OpCode {
     pub fn definition(&self) -> Definition {
         match self {
+            OpCode::Index => Definition {
+                name: String::from("OpIndex"),
+                widths: vec![],
+            },
             OpCode::Hash => Definition {
                 name: String::from("OpHash"),
                 widths: vec![2],
