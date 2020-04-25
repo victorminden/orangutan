@@ -7,7 +7,7 @@ use crate::object::Object;
 /// Represents the environment of objects already recognized by the interpreter.
 /// 
 /// Such objects are known about due to the interpretation of prior statements.
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub struct Environment {
     store: HashMap<String, Object>,
 }

@@ -49,7 +49,10 @@ fn test_constants(want: Vec<Constant>, got: Vec<Constant>) {
             (Constant::Str(want), Constant::Str(got)) => {
                 assert_eq!(want, got);
             },
-            _ => panic!("Unexpected constants!")
+            (Constant::CompiledFunction(want), Constant::CompiledFunction(got)) => {
+                assert_eq!(want, got);
+            },
+            _ => panic!("Unexpected constants! \n\nwant: \n{:?}, \n\ngot: \n{:?}", want, got)
         }
     }
 }
@@ -545,6 +548,52 @@ fn function_test() {
                 OpCode::Pop.make(),
             ],
         },
+        TestCase {
+            input: "fn() { 5 + 10; }", 
+            expected_constants: vec![
+                Constant::Integer(5),
+                Constant::Integer(10),
+                compiled_function(vec![
+                    OpCode::Constant.make_u16(0),
+                    OpCode::Constant.make_u16(1),
+                    OpCode::Add.make(),
+                    OpCode::ReturnValue.make(),
+                ]),
+            ], 
+            expected_instructions :vec![
+                OpCode::Constant.make_u16(2),
+                OpCode::Pop.make(),
+            ],
+        },
+        TestCase {
+            input: "fn() { 1; 2 }", 
+            expected_constants: vec![
+                Constant::Integer(1),
+                Constant::Integer(2),
+                compiled_function(vec![
+                    OpCode::Constant.make_u16(0),
+                    OpCode::Pop.make(),
+                    OpCode::Constant.make_u16(1),
+                    OpCode::ReturnValue.make(),
+                ]),
+            ], 
+            expected_instructions :vec![
+                OpCode::Constant.make_u16(2),
+                OpCode::Pop.make(),
+            ],
+        },
+        TestCase {
+            input: "fn() {}", 
+            expected_constants: vec![
+                compiled_function(vec![
+                    OpCode::Return.make(),
+                ]),
+            ], 
+            expected_instructions :vec![
+                OpCode::Constant.make_u16(0),
+                OpCode::Pop.make(),
+            ],
+        },
     ];
     for test in tests {
         test_compile(test);
@@ -558,3 +607,4 @@ fn compiled_function(instructions: Vec<Instructions>) -> Constant {
         }
     )
 }
+

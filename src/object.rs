@@ -38,7 +38,7 @@ impl fmt::Display for HashableObject {
 
 /// Represents any object in the Monkey language after evaluation.
 /// These types are specific to the interpreter implementation.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Object {
     Null,
     Integer(i64),

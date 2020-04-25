@@ -2,7 +2,7 @@
 mod compiler_test;
 mod symbol_table;
 
-use crate::code::{Instructions, Constant, Bytecode, OpCode};
+use crate::code::{Instructions, Constant, Bytecode, OpCode, CompiledFunction};
 use crate::ast::{Program, Statement, Expression, BlockStatement};
 use crate::object::Object;
 use crate::token::Token;
@@ -17,6 +17,16 @@ pub struct CompilationScope {
     instructions: Instructions,
     last_instruction: Option<EmittedInstruction>,
     previous_instruction: Option<EmittedInstruction>,
+}
+
+impl CompilationScope {
+    pub fn new() -> Self {
+        CompilationScope {
+            instructions: vec![],
+            last_instruction: None,
+            previous_instruction: None,
+        }
+    }
 }
 
 #[derive(PartialEq, Eq)]
@@ -49,11 +59,7 @@ impl Compiler {
             constants,
             symbol_table,
             scopes: vec![
-                CompilationScope {
-                    instructions: vec![],
-                    last_instruction: None,
-                    previous_instruction: None,
-                },
+                CompilationScope::new(),
             ],
             scope_index: 0,
         }
@@ -69,6 +75,20 @@ impl Compiler {
             self.current_instructions().clone(), 
             self.constants.borrow().clone(),
         )
+    }
+
+    fn enter_scope(&mut self) {
+        self.scopes.push(CompilationScope::new());
+        self.scope_index += 1;
+    }
+
+    fn leave_scope(&mut self) -> Result<Instructions, CompileError> {
+        self.scope_index -= 1;
+        if let Some(value) = self.scopes.pop() {
+            Ok(value.instructions)
+        } else {
+            Err(CompileError::UnknownError)
+        }
     }
 
     pub fn compile(&mut self, p: &Program) -> Result<Bytecode, CompileError> {
@@ -96,6 +116,10 @@ impl Compiler {
                 let symbol = *self.symbol_table.borrow_mut().define(name);
                 self.emit(OpCode::SetGlobal.make_u16(symbol.index));
             },
+            Statement::Return(value) => {
+                self.compile_expression(value)?;
+                self.emit(OpCode::ReturnValue.make());
+            }
             _ => return Err(CompileError::UnknownError),
         }
         Ok(())
@@ -103,6 +127,18 @@ impl Compiler {
 
     fn compile_expression(&mut self, expression: &Expression) -> Result<(), CompileError> {
         match expression {
+            Expression::FunctionLiteral(_, block_statement) => {
+                self.enter_scope();
+                self.compile_block_statement(block_statement)?;
+                self.replace_last_pop_with_return();
+                if !self.last_instruction_is(OpCode::ReturnValue) {
+                    self.emit(OpCode::Return.make());
+                }
+                let instructions = self.leave_scope()?;
+                let compiled_function = CompiledFunction { instructions };
+                let idx = self.add_constant(Constant::CompiledFunction(compiled_function));
+                self.emit(OpCode::Constant.make_u16(idx));
+            },
             Expression::Ident(name) => {
                 // Use a separate statement to catch the result so that we can unborrow the symbol_table.
                 let symbol_result = self.symbol_table.borrow().resolve(name);
@@ -216,13 +252,20 @@ impl Compiler {
         self.scopes[self.scope_index].emit(ins)
     }
 
-
     fn remove_last_pop(&mut self) {
         self.scopes[self.scope_index].remove_last_pop()
     }
 
     fn replace_instructions(&mut self, pos: usize, new_instructions: Instructions) {
         self.scopes[self.scope_index].replace_instructions(pos, new_instructions)
+    }
+
+    fn replace_last_pop_with_return(&mut self) {
+        self.scopes[self.scope_index].replace_last_pop_with_return()
+    }
+
+    fn last_instruction_is(&self, op: OpCode) -> bool {
+        self.scopes[self.scope_index].last_instruction_is(op)
     }
 }
 
@@ -250,11 +293,11 @@ impl CompilationScope {
     }
 
     fn remove_last_pop(&mut self) {
-        if let Some(inst) = &self.last_instruction {
-            if inst.opcode != OpCode::Pop { return }
-            self.last_instruction  = mem::replace(&mut self.previous_instruction, None);
-            self.instructions.truncate(self.instructions.len()-1);
+        if !self.last_instruction_is(OpCode::Pop) {
+            return
         }
+        self.last_instruction  = mem::replace(&mut self.previous_instruction, None);
+        self.instructions.truncate(self.instructions.len()-1);
     }
 
     fn replace_instructions(&mut self, pos: usize, new_instructions: Instructions) {
@@ -264,4 +307,23 @@ impl CompilationScope {
         }
     }
 
+    fn last_instruction_is(&self, op: OpCode) -> bool {
+        match &self.last_instruction {
+            Some(inst) => inst.opcode == op,
+            None => false,
+        }
+    }
+
+    fn replace_last_pop_with_return(&mut self) {
+        if !self.last_instruction_is(OpCode::Pop) {
+            return
+        }
+        let inst = match &mut self.last_instruction {
+            Some(value) => value,
+            _ => return
+        };
+        inst.opcode = OpCode::ReturnValue;
+        let last_pos = inst.position;
+        self.replace_instructions(last_pos, OpCode::ReturnValue.make());
+    }
 }

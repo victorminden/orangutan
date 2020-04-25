@@ -11,7 +11,7 @@ pub type ReadOnlyInstructions = [u8];
 // TODO: Determine a space-efficient way of representing constants.
 pub type Constant = Object;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CompiledFunction {
     pub instructions: Instructions,
 }
