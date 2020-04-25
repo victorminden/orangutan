@@ -202,6 +202,9 @@ fn no_args_function_call_test() {
         let noReturnTwo = fn() { noReturn(); };
         noReturn();
         noReturnTwo();", "null"),
+        ("let returnsOne = fn() { 1; };
+        let returnsOneReturner = fn() { returnsOne; };
+        returnsOneReturner()();", "1"),
     ];
     for (test_input, expected) in tests {
         match run(test_input) {
