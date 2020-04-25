@@ -193,9 +193,15 @@ fn index_test() {
 #[test]
 fn no_args_function_call_test() {
     let tests = vec![
-        ("fn() {5 + 11}()", 16),
+        ("fn() {5 + 11}()", "16"),
         ("let fivePlusTen = fn() { 5 + 10 };
-        fivePlusTen();", 15),
+        fivePlusTen();", "15"),
+        ("let noReturn = fn() { };
+        noReturn();", "null"),
+        ("let noReturn = fn() { };
+        let noReturnTwo = fn() { noReturn(); };
+        noReturn();
+        noReturnTwo();", "null"),
     ];
     for (test_input, expected) in tests {
         match run(test_input) {

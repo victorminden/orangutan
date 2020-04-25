@@ -90,13 +90,18 @@ impl Vm {
 
     pub fn run(&mut self) -> Result<Object, VmError> {
         while self.current_frame().ip < self.current_frame().instructions().len() {
-            let mut ip = self.current_frame().ip;
+            let ip = self.current_frame().ip;
             let ins = self.current_frame().instructions();
             let op = match OpCode::try_from(ins[ip]) {
                 Ok(op) => op,
                 _ => return Err(VmError::BadOpCode),
             };
             match op {
+                OpCode::Return => {
+                    self.pop_frame()?;
+                    self.pop()?;
+                    self.push(self.null_obj.clone())?;
+                },
                 OpCode::ReturnValue => {
                     let return_value = self.pop()?;
                     self.pop_frame()?;
