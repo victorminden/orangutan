@@ -1,14 +1,17 @@
 #[cfg(test)]
 mod vm_test;
+mod frame;
 
+use crate::vm::frame::Frame;
 use crate::object::Object;
-use crate::code::{Bytecode, Constant, Instructions, OpCode, read_uint16};
+use crate::code::{Bytecode, Constant, Instructions, OpCode, read_uint16, CompiledFunction};
 use std::convert::TryFrom;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::collections::HashMap;
 
 const STACK_SIZE: usize = 2048;
+const MAX_FRAMES: usize = 1024;
 
 #[derive(Debug)]
 pub enum VmError {
@@ -21,10 +24,11 @@ pub enum VmError {
 
 pub struct Vm {
     constants: Vec<Rc<Constant>>,
-    instructions: Instructions, 
     globals: Rc<RefCell<Vec<Rc<Object>>>>,
     stack: Vec<Rc<Object>>, // TODO: Check type
     sp: usize,
+    frames: Vec<Frame>,
+    frames_index: usize,
     // TODO: Determine a better way to have these constants.
     true_obj: Rc<Object>,
     false_obj: Rc<Object>,
@@ -33,20 +37,23 @@ pub struct Vm {
 
 impl Vm {
     pub fn new(bytecode: &Bytecode) -> Self {
-        let mut ref_counted_constants = vec![];
-        for constant in &bytecode.constants {
-            ref_counted_constants.push(Rc::new(constant.clone()));
-        }
-        let null_ref = Rc::new(Object::Null);
-        Vm {
-            constants: ref_counted_constants,
-            instructions: bytecode.instructions.clone(),
-            globals: Rc::new(RefCell::new(vec![])),
-            stack: vec![null_ref.clone(); STACK_SIZE],
-            sp: 0,
-            true_obj: Rc::new(Object::Boolean(true)),
-            false_obj: Rc::new(Object::Boolean(false)),
-            null_obj: null_ref.clone(),
+        Vm::new_with_globals_store(bytecode, Rc::new(RefCell::new(vec![])))
+    }
+
+    fn current_frame(&mut self) -> &mut Frame {
+        &mut self.frames[self.frames_index-1]
+    }
+
+    fn push_frame(&mut self, frame: Frame) {
+        self.frames_index += 1;
+        self.frames.push(frame);
+    }
+
+    fn pop_frame(&mut self) -> Result<Frame, VmError> {
+        self.frames_index -= 1;
+        match self.frames.pop() {
+            None => Err(VmError::UnknownError),
+            Some(other) => Ok(other),
         }
     }
 
@@ -56,13 +63,15 @@ impl Vm {
         for constant in &bytecode.constants {
             ref_counted_constants.push(Rc::new(constant.clone()));
         }
+        let main_function = CompiledFunction { instructions: bytecode.instructions.clone() };
         let null_ref = Rc::new(Object::Null);
         Vm {
             constants: ref_counted_constants,
-            instructions: bytecode.instructions.clone(),
             globals: store,
             stack: vec![null_ref.clone(); STACK_SIZE],
             sp: 0,
+            frames: vec![Frame::new(main_function)],
+            frames_index: 1,
             true_obj: Rc::new(Object::Boolean(true)),
             false_obj: Rc::new(Object::Boolean(false)),
             null_obj: null_ref.clone(),
@@ -70,9 +79,10 @@ impl Vm {
     }
 
     pub fn run(&mut self) -> Result<Object, VmError> {
-        let mut ip = 0;
-        while ip < self.instructions.len() {
-            let op = match OpCode::try_from(self.instructions[ip]) {
+        while self.current_frame().ip < self.current_frame().instructions().len() {
+            let mut ip = self.current_frame().ip;
+            let mut ins = self.current_frame().instructions();
+            let op = match OpCode::try_from(ins[ip]) {
                 Ok(op) => op,
                 _ => return Err(VmError::BadOpCode),
             };
@@ -83,7 +93,7 @@ impl Vm {
                     self.index_expression(left, index)?;
                 },
                 OpCode::Hash => {
-                    let num_elements = read_uint16(self.instructions[ip+1], self.instructions[ip+2]);
+                    let num_elements = read_uint16(ins[ip+1], ins[ip+2]);
                     ip += 2;
                     let mut hash_map = HashMap::new();
                     for _ in 0..num_elements/2 {
@@ -99,7 +109,7 @@ impl Vm {
                     self.push(hash)?;
                 },
                 OpCode::Array => {
-                    let num_elements = read_uint16(self.instructions[ip+1], self.instructions[ip+2]);
+                    let num_elements = read_uint16(ins[ip+1], ins[ip+2]);
                     ip += 2;
                     let mut elements = Vec::with_capacity(num_elements as usize);
                     for _ in 0..num_elements {
@@ -111,13 +121,13 @@ impl Vm {
                     self.push(array)?;
                 },
                 OpCode::SetGlobal => {
-                    let global_idx = read_uint16(self.instructions[ip+1], self.instructions[ip+2]);
+                    let global_idx = read_uint16(ins[ip+1], ins[ip+2]);
                     ip += 2;
                     let element = self.pop()?;
                     self.globals.borrow_mut().insert(global_idx as usize, element);
                 },
                 OpCode::GetGlobal => {
-                    let global_idx = read_uint16(self.instructions[ip+1], self.instructions[ip+2]);
+                    let global_idx = read_uint16(ins[ip+1], ins[ip+2]);
                     ip += 2;
                     let element = match self.globals.borrow().get(global_idx as usize) {
                         Some(elem) => elem.clone(),
@@ -130,7 +140,7 @@ impl Vm {
                 OpCode::Null => self.push(self.null_obj.clone())?,
                 OpCode::Pop => { self.pop()?; },
                 OpCode::Constant => {
-                    let const_idx = read_uint16(self.instructions[ip+1], self.instructions[ip+2]);
+                    let const_idx = read_uint16(ins[ip+1], ins[ip+2]);
                     ip += 2;
                     self.push(self.constants[const_idx as usize].clone())?;
                 },
@@ -156,11 +166,11 @@ impl Vm {
                     self.push(Rc::new(Object::Integer(-value)))?;
                 },
                 OpCode::Jump => {
-                    let jump_pos = read_uint16(self.instructions[ip+1], self.instructions[ip+2]);
+                    let jump_pos = read_uint16(ins[ip+1], ins[ip+2]);
                     ip = (jump_pos - 1) as usize;
                 },
                 OpCode::JumpNotTruthy => {
-                    let jump_pos = read_uint16(self.instructions[ip+1], self.instructions[ip+2]);
+                    let jump_pos = read_uint16(ins[ip+1], ins[ip+2]);
                     ip += 2;
                     let value = &*self.pop()?;
                     if !value.is_truthy() {
@@ -169,7 +179,8 @@ impl Vm {
                 },
                 _ => {},
             }
-            ip += 1
+            ip += 1;
+            self.current_frame().ip = ip;
         }
 
         let result = &*self.last_top();
