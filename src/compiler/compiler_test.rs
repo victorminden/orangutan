@@ -600,6 +600,49 @@ fn function_test() {
     }
 }
 
+#[test]
+fn function_call_test() {
+    let tests = vec![
+        TestCase {
+            input: "fn() { 24 }()", 
+            expected_constants: vec![
+                Constant::Integer(24),
+                compiled_function(vec![
+                    OpCode::Constant.make_u16(0),
+                    OpCode::ReturnValue.make(),
+                ]),
+            ], 
+            expected_instructions :vec![
+                OpCode::Constant.make_u16(1),
+                OpCode::Call.make(),
+                OpCode::Pop.make(),
+            ],
+        },
+        TestCase {
+            input: "let noargs = fn() { 24 };
+            noargs()", 
+            expected_constants: vec![
+                Constant::Integer(24),
+                compiled_function(vec![
+                    OpCode::Constant.make_u16(0),
+                    OpCode::ReturnValue.make(),
+                ]),
+            ], 
+            expected_instructions :vec![
+                OpCode::Constant.make_u16(1),
+                OpCode::SetGlobal.make_u16(0),
+                OpCode::GetGlobal.make_u16(0),
+                OpCode::Call.make(),
+                OpCode::Pop.make(),
+            ],
+        },
+    ];
+    for test in tests {
+        test_compile(test);
+    }
+}
+
+
 fn compiled_function(instructions: Vec<Instructions>) -> Constant {
     Constant::CompiledFunction(
         CompiledFunction {

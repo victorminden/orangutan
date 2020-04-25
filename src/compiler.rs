@@ -127,6 +127,10 @@ impl Compiler {
 
     fn compile_expression(&mut self, expression: &Expression) -> Result<(), CompileError> {
         match expression {
+            Expression::Call(func, _) => {
+                self.compile_expression(func)?;
+                self.emit(OpCode::Call.make());
+            },
             Expression::FunctionLiteral(_, block_statement) => {
                 self.enter_scope();
                 self.compile_block_statement(block_statement)?;
