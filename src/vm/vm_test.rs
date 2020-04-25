@@ -183,10 +183,24 @@ fn index_test() {
         ("{}[0]", "null"), 
     ];
     for (test_input, expected) in tests {
-        if let Ok(obj) = run(test_input) {
-            assert_eq!(obj.to_string(), expected.to_string())
-        } else {
-            panic!("VM error!");
+        match run(test_input) {
+            Ok(obj) => assert_eq!(obj.to_string(), expected.to_string()),
+            Err(error) => panic!("VM error! {:?}", error),
+        }
+    }
+}
+
+#[test]
+fn no_args_function_call_test() {
+    let tests = vec![
+        ("fn() {5 + 11}()", 16),
+        ("let fivePlusTen = fn() { 5 + 10 };
+        fivePlusTen();", 15),
+    ];
+    for (test_input, expected) in tests {
+        match run(test_input) {
+            Ok(obj) => assert_eq!(obj.to_string(), expected.to_string()),
+            Err(error) => panic!("VM error! {:?}", error),
         }
     }
 }

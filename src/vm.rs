@@ -20,6 +20,7 @@ pub enum VmError {
     StackOverflow,
     StackUnderflow,
     UnsupportedOperands,
+    CallingNonFunction,
 }
 
 pub struct Vm {
@@ -57,7 +58,6 @@ impl Vm {
         }
     }
 
-    // TODO: Deduplicate with new.
     pub fn new_with_globals_store(bytecode: &Bytecode, store: Rc<RefCell<Vec<Rc<Object>>>>) -> Self {
         let mut ref_counted_constants = vec![];
         for constant in &bytecode.constants {
@@ -65,12 +65,14 @@ impl Vm {
         }
         let main_function = CompiledFunction { instructions: bytecode.instructions.clone() };
         let null_ref = Rc::new(Object::Null);
+        let mut frames = Vec::with_capacity(MAX_FRAMES);
+        frames.push(Frame::new(main_function));
         Vm {
             constants: ref_counted_constants,
             globals: store,
             stack: vec![null_ref.clone(); STACK_SIZE],
             sp: 0,
-            frames: vec![Frame::new(main_function)],
+            frames,
             frames_index: 1,
             true_obj: Rc::new(Object::Boolean(true)),
             false_obj: Rc::new(Object::Boolean(false)),
@@ -78,15 +80,39 @@ impl Vm {
         }
     }
 
+    fn increment_ip(&mut self, val: usize) {
+        self.current_frame().ip += val;
+    }
+    
+    fn set_ip(&mut self, val: usize) {
+        self.current_frame().ip = val;
+    }
+
     pub fn run(&mut self) -> Result<Object, VmError> {
         while self.current_frame().ip < self.current_frame().instructions().len() {
             let mut ip = self.current_frame().ip;
-            let mut ins = self.current_frame().instructions();
+            let ins = self.current_frame().instructions();
             let op = match OpCode::try_from(ins[ip]) {
                 Ok(op) => op,
                 _ => return Err(VmError::BadOpCode),
             };
             match op {
+                OpCode::ReturnValue => {
+                    let return_value = self.pop()?;
+                    self.pop_frame()?;
+                    self.pop()?;
+                    self.push(return_value)?;
+                },
+                OpCode::Call => {
+                    let func = (*self.stack[self.sp-1]).clone();
+                    match func {
+                        Object::CompiledFunction(func) => {
+                            self.push_frame(Frame::new(func));
+                            continue;
+                        },
+                        _ => return Err(VmError::CallingNonFunction)
+                    }
+                },
                 OpCode::Index => {
                     let index = self.pop()?;
                     let left = self.pop()?;
@@ -94,7 +120,7 @@ impl Vm {
                 },
                 OpCode::Hash => {
                     let num_elements = read_uint16(ins[ip+1], ins[ip+2]);
-                    ip += 2;
+                    self.increment_ip(2);
                     let mut hash_map = HashMap::new();
                     for _ in 0..num_elements/2 {
                         // TODO: Stop the cloning...
@@ -110,7 +136,7 @@ impl Vm {
                 },
                 OpCode::Array => {
                     let num_elements = read_uint16(ins[ip+1], ins[ip+2]);
-                    ip += 2;
+                    self.increment_ip(2);
                     let mut elements = Vec::with_capacity(num_elements as usize);
                     for _ in 0..num_elements {
                         // TODO: If we modify the array class to hold Rc elements, we don't have to clone here.
@@ -122,13 +148,13 @@ impl Vm {
                 },
                 OpCode::SetGlobal => {
                     let global_idx = read_uint16(ins[ip+1], ins[ip+2]);
-                    ip += 2;
+                    self.increment_ip(2);
                     let element = self.pop()?;
                     self.globals.borrow_mut().insert(global_idx as usize, element);
                 },
                 OpCode::GetGlobal => {
                     let global_idx = read_uint16(ins[ip+1], ins[ip+2]);
-                    ip += 2;
+                    self.increment_ip(2);
                     let element = match self.globals.borrow().get(global_idx as usize) {
                         Some(elem) => elem.clone(),
                         _ => return Err(VmError::UnknownError),
@@ -141,7 +167,7 @@ impl Vm {
                 OpCode::Pop => { self.pop()?; },
                 OpCode::Constant => {
                     let const_idx = read_uint16(ins[ip+1], ins[ip+2]);
-                    ip += 2;
+                    self.increment_ip(2);
                     self.push(self.constants[const_idx as usize].clone())?;
                 },
                 OpCode::Bang => {
@@ -167,20 +193,19 @@ impl Vm {
                 },
                 OpCode::Jump => {
                     let jump_pos = read_uint16(ins[ip+1], ins[ip+2]);
-                    ip = (jump_pos - 1) as usize;
+                    self.set_ip((jump_pos - 1) as usize);
                 },
                 OpCode::JumpNotTruthy => {
                     let jump_pos = read_uint16(ins[ip+1], ins[ip+2]);
-                    ip += 2;
+                    self.increment_ip(2);
                     let value = &*self.pop()?;
                     if !value.is_truthy() {
-                        ip = (jump_pos - 1) as usize;
+                        self.set_ip((jump_pos - 1) as usize);
                     }
                 },
                 _ => {},
             }
-            ip += 1;
-            self.current_frame().ip = ip;
+            self.increment_ip(1);
         }
 
         let result = &*self.last_top();
