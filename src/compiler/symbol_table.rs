@@ -3,6 +3,7 @@ use std::collections::HashMap;
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum SymbolScope {
     Global,
+    Local,
 }
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct Symbol {
@@ -16,19 +17,19 @@ pub enum SymbolError {
 }
 
 #[derive(Default, Debug)]
-pub struct SymbolTable {
+struct SymbolStore {
     store: HashMap<String, Symbol>,
     num_definitions: u16,
 }
 
-impl SymbolTable {
+impl SymbolStore {
     pub fn new() -> Self {
         Default::default()
     }
 
-    pub fn define(&mut self, name: &String) -> &Symbol {
+    pub fn define_with_scope(&mut self, name: &String, scope: SymbolScope) -> &Symbol {
         self.store.insert(name.clone(), Symbol {
-            scope: SymbolScope::Global,
+            scope,
             index: self.num_definitions,
         });
         self.num_definitions += 1;
@@ -39,6 +40,54 @@ impl SymbolTable {
         match self.store.get(name) {
             Some(value) => Ok(*value),
             None => Err(SymbolError::NotFound),
+        }
+    }
+}
+
+#[derive(Default, Debug)]
+pub struct SymbolTable {
+    stores: Vec<SymbolStore>,
+    store_index: usize,
+}
+
+impl SymbolTable {
+    pub fn new() -> Self {
+        SymbolTable {
+            stores: vec![ SymbolStore::new() ],
+            store_index: 1,
+        }
+    }
+
+    pub fn enter_scope(&mut self) {
+        self.stores.push(SymbolStore::new());
+        self.store_index += 1;
+    }
+
+    pub fn leave_scope(&mut self) {
+        self.stores.pop();
+        self.store_index -= 1;
+    }
+
+    pub fn define(&mut self, name: &String) -> &Symbol {
+        let scope = if self.store_index > 1 { SymbolScope::Local } else { SymbolScope::Global };
+        self.stores[self.store_index - 1].define_with_scope(name, scope)
+    }
+
+    pub fn resolve(&self, name: &String) -> Result<Symbol, SymbolError> {
+        self.resolve_with_index(name, self.store_index - 1)
+    }
+
+    fn resolve_with_index(&self, name: &String, index: usize) -> Result<Symbol, SymbolError> {
+        match self.stores[index].resolve(name) {
+            Err(error) => {
+                if index > 0 {
+                    // Recursively look in the outer scopes.
+                    self.resolve_with_index(name, index - 1)
+                } else {
+                    Err(error)
+                }
+            },
+            good_result => good_result,
         }
     }
 }

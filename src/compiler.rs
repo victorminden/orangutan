@@ -79,12 +79,14 @@ impl Compiler {
 
     fn enter_scope(&mut self) {
         self.scopes.push(CompilationScope::new());
+        self.symbol_table.borrow_mut().enter_scope();
         self.scope_index += 1;
     }
 
     fn leave_scope(&mut self) -> Result<Instructions, CompileError> {
         self.scope_index -= 1;
         if let Some(value) = self.scopes.pop() {
+            self.symbol_table.borrow_mut().leave_scope();
             Ok(value.instructions)
         } else {
             Err(CompileError::UnknownError)
@@ -114,12 +116,16 @@ impl Compiler {
             Statement::Let(name, expr) => {
                 self.compile_expression(expr)?;
                 let symbol = *self.symbol_table.borrow_mut().define(name);
-                self.emit(OpCode::SetGlobal.make_u16(symbol.index));
+                let insts = match symbol.scope {
+                    SymbolScope::Global => OpCode::SetGlobal.make_u16(symbol.index),
+                    SymbolScope::Local => OpCode::SetLocal.make_u8(symbol.index as u8),
+                };
+                self.emit(insts);
             },
             Statement::Return(value) => {
                 self.compile_expression(value)?;
                 self.emit(OpCode::ReturnValue.make());
-            }
+            },
             _ => return Err(CompileError::UnknownError),
         }
         Ok(())
@@ -147,7 +153,13 @@ impl Compiler {
                 // Use a separate statement to catch the result so that we can unborrow the symbol_table.
                 let symbol_result = self.symbol_table.borrow().resolve(name);
                 match symbol_result {
-                    Ok(symbol) => { self.emit(OpCode::GetGlobal.make_u16(symbol.index)); },
+                    Ok(symbol) => { 
+                        let insts = match symbol.scope {
+                            SymbolScope::Global => OpCode::GetGlobal.make_u16(symbol.index),
+                            SymbolScope::Local => OpCode::GetLocal.make_u8(symbol.index as u8), 
+                        };
+                        self.emit(insts);
+                    },
                     Err(_) => return Err(CompileError::SymbolNotFound),
                 }
             },
