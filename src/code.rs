@@ -63,6 +63,8 @@ pub enum OpCode {
     JumpNotTruthy,
     GetGlobal,
     SetGlobal,
+    GetLocal,
+    SetLocal,
     Array,
     Hash,
     Index,
@@ -104,6 +106,14 @@ impl OpCode {
             OpCode::SetGlobal => Definition {
                 name: String::from("OpSetGlobal"),
                 widths: vec![2],
+            },
+            OpCode::GetLocal => Definition {
+                name: String::from("OpGetLocal"),
+                widths: vec![1],
+            },
+            OpCode::SetLocal => Definition {
+                name: String::from("OpSetLocal"),
+                widths: vec![1],
             },
             OpCode::Constant => Definition {
                 name: String::from("OpConstant"),
@@ -180,6 +190,10 @@ impl OpCode {
         let b = u16::to_be_bytes(operand);
         vec![self.into(), b[0], b[1]]
     }
+
+    pub fn make_u8(self, operand: u8) -> Instructions {
+        vec![self.into(), operand]
+    }
 }
 
 pub fn read_operands(def: &Definition, instructions: &ReadOnlyInstructions) -> (Vec<u16>, usize) {
@@ -189,6 +203,10 @@ pub fn read_operands(def: &Definition, instructions: &ReadOnlyInstructions) -> (
         match w {
             2 => {
                 operands.push(read_uint16(instructions[offset], instructions[offset+1]));
+            },
+            1 => {
+                // Even though the operand is 8-bit, we convert to 16 for read-out for ease of implementation.
+                operands.push(instructions[offset] as u16)
             }
             _ => panic!("The requested operand size was invalid!"),
         }
@@ -253,6 +271,19 @@ mod tests {
 
         for (op, operand, want) in tests {
             let got = op.make_u16(operand);
+            assert_eq!(got, want);
+        }
+    }
+
+    #[test]
+    fn make_u8_test() {
+        // Op, Operands, Expected
+        let tests = vec![
+            (OpCode::Constant, 255u8, vec![OpCode::Constant.into(), 255u8]),
+        ];
+
+        for (op, operand, want) in tests {
+            let got = op.make_u8(operand);
             assert_eq!(got, want);
         }
     }

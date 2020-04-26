@@ -642,6 +642,72 @@ fn function_call_test() {
     }
 }
 
+#[test]
+fn let_statement_scopes_test() {
+    let tests = vec![
+        TestCase {
+            input: "let num = 55; fn() { num }", 
+            expected_constants: vec![
+                Constant::Integer(55),
+                compiled_function(vec![
+                    OpCode::GetGlobal.make_u16(0),
+                    OpCode::ReturnValue.make(),
+                ]),
+            ], 
+            expected_instructions :vec![
+                OpCode::Constant.make_u16(0),
+                OpCode::SetGlobal.make_u16(0),
+                OpCode::Constant.make_u16(1),
+                OpCode::Pop.make(),
+            ],
+        },
+        TestCase {
+            input: "fn() { let num = 55; num }", 
+            expected_constants: vec![
+                Constant::Integer(55),
+                compiled_function(vec![
+                    OpCode::Constant.make_u16(0),
+                    OpCode::SetLocal.make_u16(0),
+                    OpCode::GetLocal.make_u16(0),
+                    OpCode::ReturnValue.make(),
+                ]),
+            ], 
+            expected_instructions :vec![
+                OpCode::Constant.make_u16(1),
+                OpCode::Pop.make(),
+            ],
+        },
+        TestCase {
+            input: "fn() {
+                let a = 55;
+                let b = 77;
+                a + b
+                }", 
+            expected_constants: vec![
+                Constant::Integer(55),
+                Constant::Integer(77),
+                compiled_function(vec![
+                    OpCode::Constant.make_u16(0),
+                    OpCode::SetLocal.make_u16(0),
+                    OpCode::Constant.make_u16(1),
+                    OpCode::SetLocal.make_u16(1),
+                    OpCode::GetLocal.make_u16(0),
+                    OpCode::GetLocal.make_u16(1),
+                    OpCode::Add.make(),
+                    OpCode::ReturnValue.make(),
+                ]),
+            ], 
+            expected_instructions :vec![
+                OpCode::Constant.make_u16(2),
+                OpCode::Pop.make(),
+            ],
+        },
+    ];
+    for test in tests {
+        test_compile(test);
+    }
+}
+
 
 fn compiled_function(instructions: Vec<Instructions>) -> Constant {
     Constant::CompiledFunction(
