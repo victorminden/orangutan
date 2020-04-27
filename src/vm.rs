@@ -113,6 +113,7 @@ impl Vm {
                     self.push(return_value)?;
                 },
                 OpCode::Call => {
+                    self.increment_ip(1);
                     let func = (*self.stack[self.sp-1]).clone();
                     match func {
                         Object::CompiledFunction(func) => {

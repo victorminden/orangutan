@@ -614,7 +614,7 @@ fn function_call_test() {
             ], 
             expected_instructions :vec![
                 OpCode::Constant.make_u16(1),
-                OpCode::Call.make(),
+                OpCode::Call.make_u8(0),
                 OpCode::Pop.make(),
             ],
         },
@@ -632,7 +632,47 @@ fn function_call_test() {
                 OpCode::Constant.make_u16(1),
                 OpCode::SetGlobal.make_u16(0),
                 OpCode::GetGlobal.make_u16(0),
-                OpCode::Call.make(),
+                OpCode::Call.make_u8(0),
+                OpCode::Pop.make(),
+            ],
+        },
+        TestCase {
+            input: "let onearg = fn(a) { };
+            onearg(24)", 
+            expected_constants: vec![
+                compiled_function(vec![
+                    OpCode::Return.make(),
+                ], 0),
+                Constant::Integer(24),
+            ], 
+            expected_instructions :vec![
+                OpCode::Constant.make_u16(0),
+                OpCode::SetGlobal.make_u16(0),
+                OpCode::GetGlobal.make_u16(0),
+                OpCode::Constant.make_u16(1),
+                OpCode::Call.make_u8(1),
+                OpCode::Pop.make(),
+            ],
+        },
+        TestCase {
+            input: "let manyarg = fn(a,b,c) { };
+            manyarg(24,25,26)", 
+            expected_constants: vec![
+                compiled_function(vec![
+                    OpCode::Return.make(),
+                ], 0),
+                Constant::Integer(24),
+                Constant::Integer(25),
+                Constant::Integer(26),
+            ], 
+            expected_instructions :vec![
+                OpCode::Constant.make_u16(0),
+                OpCode::SetGlobal.make_u16(0),
+                OpCode::GetGlobal.make_u16(0),
+                OpCode::Constant.make_u16(1),
+                OpCode::Constant.make_u16(2),
+                OpCode::Constant.make_u16(3),
+                OpCode::Call.make_u8(3),
                 OpCode::Pop.make(),
             ],
         },

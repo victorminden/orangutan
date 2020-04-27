@@ -133,9 +133,12 @@ impl Compiler {
 
     fn compile_expression(&mut self, expression: &Expression) -> Result<(), CompileError> {
         match expression {
-            Expression::Call(func, _) => {
+            Expression::Call(func, args) => {
                 self.compile_expression(func)?;
-                self.emit(OpCode::Call.make());
+                for expr in args {
+                    self.compile_expression(expr)?;
+                }
+                self.emit(OpCode::Call.make_u8(args.len() as u8));
             },
             Expression::FunctionLiteral(_, block_statement) => {
                 self.enter_scope();

@@ -86,7 +86,7 @@ impl OpCode {
             },
             OpCode::Call => Definition {
                 name: String::from("OpCall"),
-                widths: vec![],
+                widths: vec![1],
             },
             OpCode::Index => Definition {
                 name: String::from("OpIndex"),
