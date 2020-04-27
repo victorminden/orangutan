@@ -541,7 +541,7 @@ fn function_test() {
                     OpCode::Constant.make_u16(1),
                     OpCode::Add.make(),
                     OpCode::ReturnValue.make(),
-                ]),
+                ], 0),
             ], 
             expected_instructions :vec![
                 OpCode::Constant.make_u16(2),
@@ -558,7 +558,7 @@ fn function_test() {
                     OpCode::Constant.make_u16(1),
                     OpCode::Add.make(),
                     OpCode::ReturnValue.make(),
-                ]),
+                ], 0),
             ], 
             expected_instructions :vec![
                 OpCode::Constant.make_u16(2),
@@ -575,7 +575,7 @@ fn function_test() {
                     OpCode::Pop.make(),
                     OpCode::Constant.make_u16(1),
                     OpCode::ReturnValue.make(),
-                ]),
+                ], 0),
             ], 
             expected_instructions :vec![
                 OpCode::Constant.make_u16(2),
@@ -587,7 +587,7 @@ fn function_test() {
             expected_constants: vec![
                 compiled_function(vec![
                     OpCode::Return.make(),
-                ]),
+                ], 0),
             ], 
             expected_instructions :vec![
                 OpCode::Constant.make_u16(0),
@@ -610,7 +610,7 @@ fn function_call_test() {
                 compiled_function(vec![
                     OpCode::Constant.make_u16(0),
                     OpCode::ReturnValue.make(),
-                ]),
+                ], 0),
             ], 
             expected_instructions :vec![
                 OpCode::Constant.make_u16(1),
@@ -626,7 +626,7 @@ fn function_call_test() {
                 compiled_function(vec![
                     OpCode::Constant.make_u16(0),
                     OpCode::ReturnValue.make(),
-                ]),
+                ], 0),
             ], 
             expected_instructions :vec![
                 OpCode::Constant.make_u16(1),
@@ -652,7 +652,7 @@ fn let_statement_scopes_test() {
                 compiled_function(vec![
                     OpCode::GetGlobal.make_u16(0),
                     OpCode::ReturnValue.make(),
-                ]),
+                ], 0),
             ], 
             expected_instructions :vec![
                 OpCode::Constant.make_u16(0),
@@ -670,7 +670,7 @@ fn let_statement_scopes_test() {
                     OpCode::SetLocal.make_u8(0),
                     OpCode::GetLocal.make_u8(0),
                     OpCode::ReturnValue.make(),
-                ]),
+                ], 1),
             ], 
             expected_instructions :vec![
                 OpCode::Constant.make_u16(1),
@@ -695,7 +695,7 @@ fn let_statement_scopes_test() {
                     OpCode::GetLocal.make_u8(1),
                     OpCode::Add.make(),
                     OpCode::ReturnValue.make(),
-                ]),
+                ], 2),
             ], 
             expected_instructions :vec![
                 OpCode::Constant.make_u16(2),
@@ -718,7 +718,7 @@ fn let_statement_scopes_test() {
                     OpCode::GetLocal.make_u8(0),
                     OpCode::Add.make(),
                     OpCode::ReturnValue.make(),
-                ]),
+                ], 1),
             ], 
             expected_instructions :vec![
                 OpCode::Constant.make_u16(0),
@@ -734,10 +734,11 @@ fn let_statement_scopes_test() {
 }
 
 
-fn compiled_function(instructions: Vec<Instructions>) -> Constant {
+fn compiled_function(instructions: Vec<Instructions>, num_locals: usize) -> Constant {
     Constant::CompiledFunction(
         CompiledFunction {
             instructions: instructions.concat(),
+            num_locals,
         }
     )
 }

@@ -12,6 +12,7 @@ use std::collections::HashMap;
 
 const STACK_SIZE: usize = 2048;
 const MAX_FRAMES: usize = 1024;
+const GLOBALS_SIZE: usize = 65536;
 
 #[derive(Debug)]
 pub enum VmError {
@@ -38,7 +39,10 @@ pub struct Vm {
 
 impl Vm {
     pub fn new(bytecode: &Bytecode) -> Self {
-        Vm::new_with_globals_store(bytecode, Rc::new(RefCell::new(vec![])))
+        // TODO: Would be nice to make this the same reference as in new_with_globals_store.
+        let null_ref = Rc::new(Object::Null);
+        Vm::new_with_globals_store(bytecode, 
+            Rc::new(RefCell::new(vec![null_ref.clone(); GLOBALS_SIZE])))
     }
 
     fn current_frame(&mut self) -> &mut Frame {
@@ -63,10 +67,10 @@ impl Vm {
         for constant in &bytecode.constants {
             ref_counted_constants.push(Rc::new(constant.clone()));
         }
-        let main_function = CompiledFunction { instructions: bytecode.instructions.clone() };
+        let main_function = CompiledFunction { instructions: bytecode.instructions.clone(), num_locals: 0 };
         let null_ref = Rc::new(Object::Null);
         let mut frames = Vec::with_capacity(MAX_FRAMES);
-        frames.push(Frame::new(main_function));
+        frames.push(Frame::new(main_function, 0));
         Vm {
             constants: ref_counted_constants,
             globals: store,
@@ -98,21 +102,23 @@ impl Vm {
             };
             match op {
                 OpCode::Return => {
-                    self.pop_frame()?;
-                    self.pop()?;
+                    let frame = self.pop_frame()?;
+                    self.sp = frame.bp-1;
                     self.push(self.null_obj.clone())?;
                 },
                 OpCode::ReturnValue => {
                     let return_value = self.pop()?;
-                    self.pop_frame()?;
-                    self.pop()?;
+                    let frame = self.pop_frame()?;
+                    self.sp = frame.bp-1;
                     self.push(return_value)?;
                 },
                 OpCode::Call => {
                     let func = (*self.stack[self.sp-1]).clone();
                     match func {
                         Object::CompiledFunction(func) => {
-                            self.push_frame(Frame::new(func));
+                            let num_locals = func.num_locals;
+                            self.push_frame(Frame::new(func, self.sp));
+                            self.sp += num_locals;
                             continue;
                         },
                         _ => return Err(VmError::CallingNonFunction)
@@ -155,7 +161,8 @@ impl Vm {
                     let global_idx = read_uint16(ins[ip+1], ins[ip+2]);
                     self.increment_ip(2);
                     let element = self.pop()?;
-                    self.globals.borrow_mut().insert(global_idx as usize, element);
+                    // TODO: Insert moves things to the right!  This is probably not what we want to do!
+                    self.globals.borrow_mut()[global_idx as usize] = element;
                 },
                 OpCode::GetGlobal => {
                     let global_idx = read_uint16(ins[ip+1], ins[ip+2]);
@@ -164,6 +171,20 @@ impl Vm {
                         Some(elem) => elem.clone(),
                         _ => return Err(VmError::UnknownError),
                     };
+                    self.push(element)?;
+                },
+                OpCode::SetLocal => {
+                    let local_idx = ins[ip+1];
+                    self.increment_ip(1);
+                    let element = self.pop()?;
+                    let idx = self.current_frame().bp + local_idx as usize;
+                    self.stack[idx] = element;
+                },
+                OpCode::GetLocal => {
+                    let local_idx = ins[ip+1];
+                    self.increment_ip(1);
+                    let idx = self.current_frame().bp + local_idx as usize;
+                    let element = self.stack[idx].clone();
                     self.push(element)?;
                 },
                 OpCode::True => self.push(self.true_obj.clone())?,
@@ -212,7 +233,6 @@ impl Vm {
             }
             self.increment_ip(1);
         }
-
         let result = &*self.last_top();
         Ok(result.clone())
     }

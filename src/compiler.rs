@@ -144,8 +144,12 @@ impl Compiler {
                 if !self.last_instruction_is(OpCode::ReturnValue) {
                     self.emit(OpCode::Return.make());
                 }
+                let num_locals = self.symbol_table.borrow().num_definitions();
                 let instructions = self.leave_scope()?;
-                let compiled_function = CompiledFunction { instructions };
+                let compiled_function = CompiledFunction { 
+                    instructions, 
+                    num_locals,
+                };
                 let idx = self.add_constant(Constant::CompiledFunction(compiled_function));
                 self.emit(OpCode::Constant.make_u16(idx));
             },

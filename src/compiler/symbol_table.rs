@@ -19,7 +19,7 @@ pub enum SymbolError {
 #[derive(Default, Debug)]
 struct SymbolStore {
     store: HashMap<String, Symbol>,
-    num_definitions: u16,
+    pub num_definitions: u16,
 }
 
 impl SymbolStore {
@@ -56,6 +56,10 @@ impl SymbolTable {
             stores: vec![ SymbolStore::new() ],
             store_index: 1,
         }
+    }
+
+    pub fn num_definitions(&self) -> usize {
+        self.stores[self.store_index-1].num_definitions as usize
     }
 
     pub fn enter_scope(&mut self) {
