@@ -1,13 +1,13 @@
 //! Lexer
-//! 
+//!
 //! `lexer` contains functionality for lexing raw input, i.e., converting input strings to a sequence of Monkey tokens.
 //! The public interface is simply the `Lexer` type, which performs all the heavy lifting.
 
-use crate::token::Token;
 use crate::token::lookup_ident;
+use crate::token::Token;
 
-use std::str::Chars;
 use std::iter::Peekable;
+use std::str::Chars;
 
 fn is_valid_name_symbol(ch: &char) -> bool {
     is_valid_name_start_symbol(ch) || ch.is_numeric()
@@ -32,7 +32,7 @@ impl<'a> Lexer<'a> {
     }
 
     /// Returns a reference to the next token to be lexed from the input stream.
-    /// 
+    ///
     /// Calling `peek_token` does not advance to the next token, so calling it twice in a row returns the same result.
     pub fn peek_token(&mut self) -> &Token {
         // If we already peeked, we can use the buffered result.
@@ -44,7 +44,7 @@ impl<'a> Lexer<'a> {
     }
 
     /// Returns the next token lexed from the input stream.
-    /// 
+    ///
     /// Repeatedly calling `next_token` will iterate over all tokens of the input.
     pub fn next_token(&mut self) -> Token {
         // It is possible that we already peeked the input.
@@ -64,7 +64,7 @@ impl<'a> Lexer<'a> {
                     return Token::Equal;
                 }
                 return Token::Assign;
-            },
+            }
             Some(';') => Token::Semicolon,
             Some('(') => Token::LParen,
             Some(')') => Token::RParen,
@@ -86,11 +86,9 @@ impl<'a> Lexer<'a> {
                     return Token::NotEqual;
                 }
                 return Token::Bang;
-            },
+            }
             None => Token::EndOfFile,
-            Some('"') => {
-                self.read_string()
-            },
+            Some('"') => self.read_string(),
             Some(a) => {
                 if is_valid_name_start_symbol(&a) {
                     return lookup_ident(self.read_identifier(a));
@@ -100,7 +98,7 @@ impl<'a> Lexer<'a> {
                 return Token::Illegal;
             }
         }
-    } 
+    }
 
     fn skip_whitespace(&mut self) {
         while let Some(ch) = self.input.peek() {

@@ -1,9 +1,9 @@
 use super::*;
 
 use crate::ast::Program;
+use crate::code::{disassemble, CompiledFunction, Constant, OpCode};
 use crate::lexer::Lexer;
 use crate::parser::Parser;
-use crate::code::{OpCode, Constant, disassemble, CompiledFunction};
 
 struct TestCase<'a> {
     input: &'a str,
@@ -21,7 +21,7 @@ fn test_compile(test_case: TestCase) {
     let mut compiler = Compiler::new();
     let bytecode = match compiler.compile(&program) {
         Ok(code) => code,
-        Err(_) => panic!("Compilation error!")
+        Err(_) => panic!("Compilation error!"),
     };
 
     test_instructions(test_case.expected_instructions, bytecode.instructions);
@@ -33,11 +33,23 @@ fn test_instructions(want: Vec<Instructions>, got: Instructions) {
     for inst in want {
         catted_want.extend(inst);
     }
-    
+
     for (w, g) in catted_want.iter().zip(got.iter()) {
-        assert_eq!(w, g, "\n\nwant: \n{}, \n\ngot: \n{}", disassemble(&catted_want), disassemble(&got));
+        assert_eq!(
+            w,
+            g,
+            "\n\nwant: \n{}, \n\ngot: \n{}",
+            disassemble(&catted_want),
+            disassemble(&got)
+        );
     }
-    assert_eq!(catted_want.len(), got.len(),  "\n\nwant: \n{}, \n\ngot: \n{}", disassemble(&catted_want), disassemble(&got));
+    assert_eq!(
+        catted_want.len(),
+        got.len(),
+        "\n\nwant: \n{}, \n\ngot: \n{}",
+        disassemble(&catted_want),
+        disassemble(&got)
+    );
 }
 
 fn test_constants(want: Vec<Constant>, got: Vec<Constant>) {
@@ -45,97 +57,82 @@ fn test_constants(want: Vec<Constant>, got: Vec<Constant>) {
         match (w, g) {
             (Constant::Integer(want), Constant::Integer(got)) => {
                 assert_eq!(want, got);
-            },
+            }
             (Constant::Str(want), Constant::Str(got)) => {
                 assert_eq!(want, got);
-            },
+            }
             (Constant::CompiledFunction(want), Constant::CompiledFunction(got)) => {
                 assert_eq!(want, got);
-            },
-            _ => panic!("Unexpected constants! \n\nwant: \n{:?}, \n\ngot: \n{:?}", want, got)
+            }
+            _ => panic!(
+                "Unexpected constants! \n\nwant: \n{:?}, \n\ngot: \n{:?}",
+                want, got
+            ),
         }
     }
 }
-
 
 #[test]
 fn integer_arithmetic_test() {
     let tests = vec![
         TestCase {
-            input: "1+2", 
-            expected_constants: vec![
-                Constant::Integer(1), 
-                Constant::Integer(2),
-                ], 
-            expected_instructions :vec![
+            input: "1+2",
+            expected_constants: vec![Constant::Integer(1), Constant::Integer(2)],
+            expected_instructions: vec![
                 OpCode::Constant.make_u16(0),
                 OpCode::Constant.make_u16(1),
                 OpCode::Add.make(),
                 OpCode::Pop.make(),
-                ],
+            ],
         },
         TestCase {
-            input: "1; 2", 
-            expected_constants: vec![
-                Constant::Integer(1), 
-                Constant::Integer(2),
-                ], 
-            expected_instructions :vec![
+            input: "1; 2",
+            expected_constants: vec![Constant::Integer(1), Constant::Integer(2)],
+            expected_instructions: vec![
                 OpCode::Constant.make_u16(0),
                 OpCode::Pop.make(),
                 OpCode::Constant.make_u16(1),
                 OpCode::Pop.make(),
-                ],
+            ],
         },
         TestCase {
-            input: "2-1", 
-            expected_constants: vec![
-                Constant::Integer(2), 
-                Constant::Integer(1),
-                ], 
-            expected_instructions :vec![
+            input: "2-1",
+            expected_constants: vec![Constant::Integer(2), Constant::Integer(1)],
+            expected_instructions: vec![
                 OpCode::Constant.make_u16(0),
                 OpCode::Constant.make_u16(1),
                 OpCode::Sub.make(),
                 OpCode::Pop.make(),
-                ],
+            ],
         },
         TestCase {
-            input: "1*2", 
-            expected_constants: vec![
-                Constant::Integer(1), 
-                Constant::Integer(2),
-                ], 
-            expected_instructions :vec![
+            input: "1*2",
+            expected_constants: vec![Constant::Integer(1), Constant::Integer(2)],
+            expected_instructions: vec![
                 OpCode::Constant.make_u16(0),
                 OpCode::Constant.make_u16(1),
                 OpCode::Mul.make(),
                 OpCode::Pop.make(),
-                ],
+            ],
         },
         TestCase {
-            input: "2/1", 
-            expected_constants: vec![
-                Constant::Integer(2), 
-                Constant::Integer(1),
-                ], 
-            expected_instructions :vec![
+            input: "2/1",
+            expected_constants: vec![Constant::Integer(2), Constant::Integer(1)],
+            expected_instructions: vec![
                 OpCode::Constant.make_u16(0),
                 OpCode::Constant.make_u16(1),
                 OpCode::Div.make(),
                 OpCode::Pop.make(),
-                ],
+            ],
         },
         TestCase {
-            input: "-1", 
-            expected_constants: vec![
-                Constant::Integer(1),
-                ], 
-            expected_instructions :vec![
+            input: "-1",
+            expected_constants: vec![Constant::Integer(1)],
+            expected_instructions: vec![
                 OpCode::Constant.make_u16(0),
                 OpCode::Minus.make(),
                 OpCode::Pop.make(),
-                ],
+            ],
         },
     ];
     for test in tests {
@@ -147,37 +144,28 @@ fn integer_arithmetic_test() {
 fn boolean_test() {
     let tests = vec![
         TestCase {
-            input: "true", 
-            expected_constants: vec![], 
-            expected_instructions :vec![
-                OpCode::True.make(),
-                OpCode::Pop.make(),
-                ],
+            input: "true",
+            expected_constants: vec![],
+            expected_instructions: vec![OpCode::True.make(), OpCode::Pop.make()],
         },
         TestCase {
-            input: "!true", 
-            expected_constants: vec![], 
-            expected_instructions :vec![
+            input: "!true",
+            expected_constants: vec![],
+            expected_instructions: vec![
                 OpCode::True.make(),
                 OpCode::Bang.make(),
                 OpCode::Pop.make(),
-                ],
+            ],
         },
         TestCase {
-            input: "false", 
-            expected_constants: vec![], 
-            expected_instructions :vec![
-                OpCode::False.make(),
-                OpCode::Pop.make(),
-                ],
+            input: "false",
+            expected_constants: vec![],
+            expected_instructions: vec![OpCode::False.make(), OpCode::Pop.make()],
         },
         TestCase {
-            input: "1 > 2", 
-            expected_constants: vec![
-                Constant::Integer(1),
-                Constant::Integer(2),
-            ], 
-            expected_instructions :vec![
+            input: "1 > 2",
+            expected_constants: vec![Constant::Integer(1), Constant::Integer(2)],
+            expected_instructions: vec![
                 OpCode::Constant.make_u16(0),
                 OpCode::Constant.make_u16(1),
                 OpCode::GreaterThan.make(),
@@ -185,12 +173,9 @@ fn boolean_test() {
             ],
         },
         TestCase {
-            input: "1 < 2", 
-            expected_constants: vec![
-                Constant::Integer(2),
-                Constant::Integer(1),
-            ], 
-            expected_instructions :vec![
+            input: "1 < 2",
+            expected_constants: vec![Constant::Integer(2), Constant::Integer(1)],
+            expected_instructions: vec![
                 OpCode::Constant.make_u16(0),
                 OpCode::Constant.make_u16(1),
                 OpCode::GreaterThan.make(),
@@ -198,12 +183,9 @@ fn boolean_test() {
             ],
         },
         TestCase {
-            input: "1 == 2", 
-            expected_constants: vec![
-                Constant::Integer(1),
-                Constant::Integer(2),
-            ], 
-            expected_instructions :vec![
+            input: "1 == 2",
+            expected_constants: vec![Constant::Integer(1), Constant::Integer(2)],
+            expected_instructions: vec![
                 OpCode::Constant.make_u16(0),
                 OpCode::Constant.make_u16(1),
                 OpCode::Equal.make(),
@@ -211,12 +193,9 @@ fn boolean_test() {
             ],
         },
         TestCase {
-            input: "1 != 2", 
-            expected_constants: vec![
-                Constant::Integer(1),
-                Constant::Integer(2),
-            ], 
-            expected_instructions :vec![
+            input: "1 != 2",
+            expected_constants: vec![Constant::Integer(1), Constant::Integer(2)],
+            expected_instructions: vec![
                 OpCode::Constant.make_u16(0),
                 OpCode::Constant.make_u16(1),
                 OpCode::NotEqual.make(),
@@ -224,9 +203,9 @@ fn boolean_test() {
             ],
         },
         TestCase {
-            input: "true == false", 
-            expected_constants: vec![], 
-            expected_instructions :vec![
+            input: "true == false",
+            expected_constants: vec![],
+            expected_instructions: vec![
                 OpCode::True.make(),
                 OpCode::False.make(),
                 OpCode::Equal.make(),
@@ -243,12 +222,9 @@ fn boolean_test() {
 fn conditionals_test() {
     let tests = vec![
         TestCase {
-            input: "if (true) { 10 }; 3333;", 
-            expected_constants: vec![
-                Constant::Integer(10),
-                Constant::Integer(3333),
-            ], 
-            expected_instructions :vec![
+            input: "if (true) { 10 }; 3333;",
+            expected_constants: vec![Constant::Integer(10), Constant::Integer(3333)],
+            expected_instructions: vec![
                 OpCode::True.make(),
                 OpCode::JumpNotTruthy.make_u16(10),
                 OpCode::Constant.make_u16(0),
@@ -257,15 +233,12 @@ fn conditionals_test() {
                 OpCode::Pop.make(),
                 OpCode::Constant.make_u16(1),
                 OpCode::Pop.make(),
-                ],
+            ],
         },
         TestCase {
-            input: "if (true) { 10 } else { 20 };", 
-            expected_constants: vec![
-                Constant::Integer(10),
-                Constant::Integer(20),
-            ], 
-            expected_instructions :vec![
+            input: "if (true) { 10 } else { 20 };",
+            expected_constants: vec![Constant::Integer(10), Constant::Integer(20)],
+            expected_instructions: vec![
                 OpCode::True.make(),
                 OpCode::JumpNotTruthy.make_u16(10),
                 OpCode::Constant.make_u16(0),
@@ -285,12 +258,9 @@ fn global_let_statement_test() {
     let tests = vec![
         TestCase {
             input: "let one = 1;
-            let two = 2;", 
-            expected_constants: vec![
-                Constant::Integer(1),
-                Constant::Integer(2),
-            ], 
-            expected_instructions :vec![
+            let two = 2;",
+            expected_constants: vec![Constant::Integer(1), Constant::Integer(2)],
+            expected_instructions: vec![
                 OpCode::Constant.make_u16(0),
                 OpCode::SetGlobal.make_u16(0),
                 OpCode::Constant.make_u16(1),
@@ -299,11 +269,9 @@ fn global_let_statement_test() {
         },
         TestCase {
             input: "let one = 1;
-            one;", 
-            expected_constants: vec![
-                Constant::Integer(1),
-            ], 
-            expected_instructions :vec![
+            one;",
+            expected_constants: vec![Constant::Integer(1)],
+            expected_instructions: vec![
                 OpCode::Constant.make_u16(0),
                 OpCode::SetGlobal.make_u16(0),
                 OpCode::GetGlobal.make_u16(0),
@@ -313,11 +281,9 @@ fn global_let_statement_test() {
         TestCase {
             input: "let one = 1;
             let two = one;
-            two;", 
-            expected_constants: vec![
-                Constant::Integer(1),
-            ], 
-            expected_instructions :vec![
+            two;",
+            expected_constants: vec![Constant::Integer(1)],
+            expected_instructions: vec![
                 OpCode::Constant.make_u16(0),
                 OpCode::SetGlobal.make_u16(0),
                 OpCode::GetGlobal.make_u16(0),
@@ -332,27 +298,21 @@ fn global_let_statement_test() {
     }
 }
 
-
 #[test]
 fn string_expression_test() {
     let tests = vec![
         TestCase {
-            input: "\"monkey\"", 
-            expected_constants: vec![
-                Constant::Str(String::from("monkey")),
-            ], 
-            expected_instructions :vec![
-                OpCode::Constant.make_u16(0),
-                OpCode::Pop.make(),
-            ],
+            input: "\"monkey\"",
+            expected_constants: vec![Constant::Str(String::from("monkey"))],
+            expected_instructions: vec![OpCode::Constant.make_u16(0), OpCode::Pop.make()],
         },
         TestCase {
-            input: "\"mon\" + \"key\"", 
+            input: "\"mon\" + \"key\"",
             expected_constants: vec![
                 Constant::Str(String::from("mon")),
                 Constant::Str(String::from("key")),
-            ], 
-            expected_instructions :vec![
+            ],
+            expected_instructions: vec![
                 OpCode::Constant.make_u16(0),
                 OpCode::Constant.make_u16(1),
                 OpCode::Add.make(),
@@ -369,21 +329,18 @@ fn string_expression_test() {
 fn array_literal_test() {
     let tests = vec![
         TestCase {
-            input: "[]", 
-            expected_constants: vec![], 
-            expected_instructions :vec![
-                OpCode::Array.make_u16(0),
-                OpCode::Pop.make(),
-            ],
+            input: "[]",
+            expected_constants: vec![],
+            expected_instructions: vec![OpCode::Array.make_u16(0), OpCode::Pop.make()],
         },
         TestCase {
-            input: "[1, 2, 3]", 
+            input: "[1, 2, 3]",
             expected_constants: vec![
                 Constant::Integer(1),
                 Constant::Integer(2),
                 Constant::Integer(3),
-            ], 
-            expected_instructions :vec![
+            ],
+            expected_instructions: vec![
                 OpCode::Constant.make_u16(0),
                 OpCode::Constant.make_u16(1),
                 OpCode::Constant.make_u16(2),
@@ -392,7 +349,7 @@ fn array_literal_test() {
             ],
         },
         TestCase {
-            input: "[1+2, 3-4, 5*6]", 
+            input: "[1+2, 3-4, 5*6]",
             expected_constants: vec![
                 Constant::Integer(1),
                 Constant::Integer(2),
@@ -400,8 +357,8 @@ fn array_literal_test() {
                 Constant::Integer(4),
                 Constant::Integer(5),
                 Constant::Integer(6),
-            ], 
-            expected_instructions :vec![
+            ],
+            expected_instructions: vec![
                 OpCode::Constant.make_u16(0),
                 OpCode::Constant.make_u16(1),
                 OpCode::Add.make(),
@@ -425,22 +382,19 @@ fn array_literal_test() {
 fn hash_literal_test() {
     let tests = vec![
         TestCase {
-            input: "{}", 
-            expected_constants: vec![], 
-            expected_instructions :vec![
-                OpCode::Hash.make_u16(0),
-                OpCode::Pop.make(),
-            ],
+            input: "{}",
+            expected_constants: vec![],
+            expected_instructions: vec![OpCode::Hash.make_u16(0), OpCode::Pop.make()],
         },
         TestCase {
-            input: "{1: 2, 3: 4}", 
+            input: "{1: 2, 3: 4}",
             expected_constants: vec![
                 Constant::Integer(1),
                 Constant::Integer(2),
                 Constant::Integer(3),
                 Constant::Integer(4),
-            ], 
-            expected_instructions :vec![
+            ],
+            expected_instructions: vec![
                 OpCode::Constant.make_u16(0),
                 OpCode::Constant.make_u16(1),
                 OpCode::Constant.make_u16(2),
@@ -450,7 +404,7 @@ fn hash_literal_test() {
             ],
         },
         TestCase {
-            input: "{1: 2 + 3, 4: 5 * 6}", 
+            input: "{1: 2 + 3, 4: 5 * 6}",
             expected_constants: vec![
                 Constant::Integer(1),
                 Constant::Integer(2),
@@ -458,8 +412,8 @@ fn hash_literal_test() {
                 Constant::Integer(4),
                 Constant::Integer(5),
                 Constant::Integer(6),
-            ], 
-            expected_instructions :vec![
+            ],
+            expected_instructions: vec![
                 OpCode::Constant.make_u16(0),
                 OpCode::Constant.make_u16(1),
                 OpCode::Constant.make_u16(2),
@@ -478,20 +432,19 @@ fn hash_literal_test() {
     }
 }
 
-
 #[test]
 fn index_expression_test() {
     let tests = vec![
         TestCase {
-            input: "[1,2,3][1+1]", 
+            input: "[1,2,3][1+1]",
             expected_constants: vec![
                 Constant::Integer(1),
                 Constant::Integer(2),
                 Constant::Integer(3),
                 Constant::Integer(1),
                 Constant::Integer(1),
-            ], 
-            expected_instructions :vec![
+            ],
+            expected_instructions: vec![
                 OpCode::Constant.make_u16(0),
                 OpCode::Constant.make_u16(1),
                 OpCode::Constant.make_u16(2),
@@ -504,14 +457,14 @@ fn index_expression_test() {
             ],
         },
         TestCase {
-            input: "{1: 2}[2-1]", 
+            input: "{1: 2}[2-1]",
             expected_constants: vec![
                 Constant::Integer(1),
                 Constant::Integer(2),
                 Constant::Integer(2),
                 Constant::Integer(1),
-            ], 
-            expected_instructions :vec![
+            ],
+            expected_instructions: vec![
                 OpCode::Constant.make_u16(0),
                 OpCode::Constant.make_u16(1),
                 OpCode::Hash.make_u16(2),
@@ -532,67 +485,60 @@ fn index_expression_test() {
 fn function_test() {
     let tests = vec![
         TestCase {
-            input: "fn() { return 5 + 10; }", 
+            input: "fn() { return 5 + 10; }",
             expected_constants: vec![
                 Constant::Integer(5),
                 Constant::Integer(10),
-                compiled_function(vec![
-                    OpCode::Constant.make_u16(0),
-                    OpCode::Constant.make_u16(1),
-                    OpCode::Add.make(),
-                    OpCode::ReturnValue.make(),
-                ], 0),
-            ], 
-            expected_instructions :vec![
-                OpCode::Constant.make_u16(2),
-                OpCode::Pop.make(),
+                compiled_function(
+                    vec![
+                        OpCode::Constant.make_u16(0),
+                        OpCode::Constant.make_u16(1),
+                        OpCode::Add.make(),
+                        OpCode::ReturnValue.make(),
+                    ],
+                    0,
+                ),
             ],
+            expected_instructions: vec![OpCode::Constant.make_u16(2), OpCode::Pop.make()],
         },
         TestCase {
-            input: "fn() { 5 + 10; }", 
+            input: "fn() { 5 + 10; }",
             expected_constants: vec![
                 Constant::Integer(5),
                 Constant::Integer(10),
-                compiled_function(vec![
-                    OpCode::Constant.make_u16(0),
-                    OpCode::Constant.make_u16(1),
-                    OpCode::Add.make(),
-                    OpCode::ReturnValue.make(),
-                ], 0),
-            ], 
-            expected_instructions :vec![
-                OpCode::Constant.make_u16(2),
-                OpCode::Pop.make(),
+                compiled_function(
+                    vec![
+                        OpCode::Constant.make_u16(0),
+                        OpCode::Constant.make_u16(1),
+                        OpCode::Add.make(),
+                        OpCode::ReturnValue.make(),
+                    ],
+                    0,
+                ),
             ],
+            expected_instructions: vec![OpCode::Constant.make_u16(2), OpCode::Pop.make()],
         },
         TestCase {
-            input: "fn() { 1; 2 }", 
+            input: "fn() { 1; 2 }",
             expected_constants: vec![
                 Constant::Integer(1),
                 Constant::Integer(2),
-                compiled_function(vec![
-                    OpCode::Constant.make_u16(0),
-                    OpCode::Pop.make(),
-                    OpCode::Constant.make_u16(1),
-                    OpCode::ReturnValue.make(),
-                ], 0),
-            ], 
-            expected_instructions :vec![
-                OpCode::Constant.make_u16(2),
-                OpCode::Pop.make(),
+                compiled_function(
+                    vec![
+                        OpCode::Constant.make_u16(0),
+                        OpCode::Pop.make(),
+                        OpCode::Constant.make_u16(1),
+                        OpCode::ReturnValue.make(),
+                    ],
+                    0,
+                ),
             ],
+            expected_instructions: vec![OpCode::Constant.make_u16(2), OpCode::Pop.make()],
         },
         TestCase {
-            input: "fn() {}", 
-            expected_constants: vec![
-                compiled_function(vec![
-                    OpCode::Return.make(),
-                ], 0),
-            ], 
-            expected_instructions :vec![
-                OpCode::Constant.make_u16(0),
-                OpCode::Pop.make(),
-            ],
+            input: "fn() {}",
+            expected_constants: vec![compiled_function(vec![OpCode::Return.make()], 0)],
+            expected_instructions: vec![OpCode::Constant.make_u16(0), OpCode::Pop.make()],
         },
     ];
     for test in tests {
@@ -604,15 +550,15 @@ fn function_test() {
 fn function_call_test() {
     let tests = vec![
         TestCase {
-            input: "fn() { 24 }()", 
+            input: "fn() { 24 }()",
             expected_constants: vec![
                 Constant::Integer(24),
-                compiled_function(vec![
-                    OpCode::Constant.make_u16(0),
-                    OpCode::ReturnValue.make(),
-                ], 0),
-            ], 
-            expected_instructions :vec![
+                compiled_function(
+                    vec![OpCode::Constant.make_u16(0), OpCode::ReturnValue.make()],
+                    0,
+                ),
+            ],
+            expected_instructions: vec![
                 OpCode::Constant.make_u16(1),
                 OpCode::Call.make_u8(0),
                 OpCode::Pop.make(),
@@ -620,15 +566,15 @@ fn function_call_test() {
         },
         TestCase {
             input: "let noargs = fn() { 24 };
-            noargs()", 
+            noargs()",
             expected_constants: vec![
                 Constant::Integer(24),
-                compiled_function(vec![
-                    OpCode::Constant.make_u16(0),
-                    OpCode::ReturnValue.make(),
-                ], 0),
-            ], 
-            expected_instructions :vec![
+                compiled_function(
+                    vec![OpCode::Constant.make_u16(0), OpCode::ReturnValue.make()],
+                    0,
+                ),
+            ],
+            expected_instructions: vec![
                 OpCode::Constant.make_u16(1),
                 OpCode::SetGlobal.make_u16(0),
                 OpCode::GetGlobal.make_u16(0),
@@ -638,14 +584,12 @@ fn function_call_test() {
         },
         TestCase {
             input: "let onearg = fn(a) { };
-            onearg(24)", 
+            onearg(24)",
             expected_constants: vec![
-                compiled_function(vec![
-                    OpCode::Return.make(),
-                ], 0),
+                compiled_function(vec![OpCode::Return.make()], 0),
                 Constant::Integer(24),
-            ], 
-            expected_instructions :vec![
+            ],
+            expected_instructions: vec![
                 OpCode::Constant.make_u16(0),
                 OpCode::SetGlobal.make_u16(0),
                 OpCode::GetGlobal.make_u16(0),
@@ -656,16 +600,14 @@ fn function_call_test() {
         },
         TestCase {
             input: "let manyarg = fn(a,b,c) { };
-            manyarg(24,25,26)", 
+            manyarg(24,25,26)",
             expected_constants: vec![
-                compiled_function(vec![
-                    OpCode::Return.make(),
-                ], 0),
+                compiled_function(vec![OpCode::Return.make()], 0),
                 Constant::Integer(24),
                 Constant::Integer(25),
                 Constant::Integer(26),
-            ], 
-            expected_instructions :vec![
+            ],
+            expected_instructions: vec![
                 OpCode::Constant.make_u16(0),
                 OpCode::SetGlobal.make_u16(0),
                 OpCode::GetGlobal.make_u16(0),
@@ -686,15 +628,15 @@ fn function_call_test() {
 fn let_statement_scopes_test() {
     let tests = vec![
         TestCase {
-            input: "let num = 55; fn() { num }", 
+            input: "let num = 55; fn() { num }",
             expected_constants: vec![
                 Constant::Integer(55),
-                compiled_function(vec![
-                    OpCode::GetGlobal.make_u16(0),
-                    OpCode::ReturnValue.make(),
-                ], 0),
-            ], 
-            expected_instructions :vec![
+                compiled_function(
+                    vec![OpCode::GetGlobal.make_u16(0), OpCode::ReturnValue.make()],
+                    0,
+                ),
+            ],
+            expected_instructions: vec![
                 OpCode::Constant.make_u16(0),
                 OpCode::SetGlobal.make_u16(0),
                 OpCode::Constant.make_u16(1),
@@ -702,65 +644,68 @@ fn let_statement_scopes_test() {
             ],
         },
         TestCase {
-            input: "fn() { let num = 55; num }", 
+            input: "fn() { let num = 55; num }",
             expected_constants: vec![
                 Constant::Integer(55),
-                compiled_function(vec![
-                    OpCode::Constant.make_u16(0),
-                    OpCode::SetLocal.make_u8(0),
-                    OpCode::GetLocal.make_u8(0),
-                    OpCode::ReturnValue.make(),
-                ], 1),
-            ], 
-            expected_instructions :vec![
-                OpCode::Constant.make_u16(1),
-                OpCode::Pop.make(),
+                compiled_function(
+                    vec![
+                        OpCode::Constant.make_u16(0),
+                        OpCode::SetLocal.make_u8(0),
+                        OpCode::GetLocal.make_u8(0),
+                        OpCode::ReturnValue.make(),
+                    ],
+                    1,
+                ),
             ],
-        }, 
+            expected_instructions: vec![OpCode::Constant.make_u16(1), OpCode::Pop.make()],
+        },
         TestCase {
             input: "fn() {
                 let a = 55;
                 let b = 77;
                 a + b
-                }", 
+                }",
             expected_constants: vec![
                 Constant::Integer(55),
                 Constant::Integer(77),
-                compiled_function(vec![
-                    OpCode::Constant.make_u16(0),
-                    OpCode::SetLocal.make_u8(0),
-                    OpCode::Constant.make_u16(1),
-                    OpCode::SetLocal.make_u8(1),
-                    OpCode::GetLocal.make_u8(0),
-                    OpCode::GetLocal.make_u8(1),
-                    OpCode::Add.make(),
-                    OpCode::ReturnValue.make(),
-                ], 2),
-            ], 
-            expected_instructions :vec![
-                OpCode::Constant.make_u16(2),
-                OpCode::Pop.make(),
+                compiled_function(
+                    vec![
+                        OpCode::Constant.make_u16(0),
+                        OpCode::SetLocal.make_u8(0),
+                        OpCode::Constant.make_u16(1),
+                        OpCode::SetLocal.make_u8(1),
+                        OpCode::GetLocal.make_u8(0),
+                        OpCode::GetLocal.make_u8(1),
+                        OpCode::Add.make(),
+                        OpCode::ReturnValue.make(),
+                    ],
+                    2,
+                ),
             ],
+            expected_instructions: vec![OpCode::Constant.make_u16(2), OpCode::Pop.make()],
         },
         TestCase {
             input: " let a = 55;
             fn() {
                 let b = 77;
                 a + b
-                }", 
+                }",
             expected_constants: vec![
                 Constant::Integer(55),
-                Constant::Integer(77), 
-                compiled_function(vec![
-                    OpCode::Constant.make_u16(1),
-                    OpCode::SetLocal.make_u8(0),
-                    OpCode::GetGlobal.make_u16(0),
-                    OpCode::GetLocal.make_u8(0),
-                    OpCode::Add.make(),
-                    OpCode::ReturnValue.make(),
-                ], 1),
-            ], 
-            expected_instructions :vec![
+                Constant::Integer(77),
+                compiled_function(
+                    vec![
+                        OpCode::Constant.make_u16(1),
+                        OpCode::SetLocal.make_u8(0),
+                        OpCode::GetGlobal.make_u16(0),
+                        OpCode::GetLocal.make_u8(0),
+                        OpCode::Add.make(),
+                        OpCode::ReturnValue.make(),
+                    ],
+                    1,
+                ),
+            ],
+            expected_instructions: vec![
                 OpCode::Constant.make_u16(0),
                 OpCode::SetGlobal.make_u16(0),
                 OpCode::Constant.make_u16(2),
@@ -773,13 +718,9 @@ fn let_statement_scopes_test() {
     }
 }
 
-
 fn compiled_function(instructions: Vec<Instructions>, num_locals: usize) -> Constant {
-    Constant::CompiledFunction(
-        CompiledFunction {
-            instructions: instructions.concat(),
-            num_locals,
-        }
-    )
+    Constant::CompiledFunction(CompiledFunction {
+        instructions: instructions.concat(),
+        num_locals,
+    })
 }
-

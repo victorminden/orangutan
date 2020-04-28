@@ -1,10 +1,10 @@
 //! Token
-//! 
+//!
 //! `token` holds a simple type and functionality for dealing with tokens of the Monkey language during lexing and parsing.
 use std::fmt;
 
 /// Represents a single input token recognized as valid in some Monkey language context.
-/// 
+///
 /// The different possible values of `Token` represent all tokens defined in the Monkey language.
 /// In addition, a few special tokens are defined to represent special cases during lexing and parsing.
 #[derive(Debug, PartialEq, Clone)]
@@ -33,7 +33,7 @@ pub enum Token {
     Colon,
     // Groups
     LParen,
-    RParen, 
+    RParen,
     LBrace,
     RBrace,
     LBracket,
@@ -61,7 +61,7 @@ pub fn lookup_ident(ident: String) -> Token {
         "if" => Token::If,
         "else" => Token::Else,
         "return" => Token::Return,
-        _ => Token::Ident(ident)
+        _ => Token::Ident(ident),
     }
 }
 
@@ -77,7 +77,7 @@ impl fmt::Display for Token {
             Token::NotEqual => write!(f, "!="),
             Token::Asterisk => write!(f, "*"),
             Token::Slash => write!(f, "/"),
-            Token::Bang =>write!(f, "!"),
+            Token::Bang => write!(f, "!"),
             Token::LessThan => write!(f, "<"),
             Token::GreaterThan => write!(f, ">"),
             Token::LBrace => write!(f, "{{"),

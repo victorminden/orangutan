@@ -1,8 +1,8 @@
 //! BuiltInFunctions
-//! 
+//!
 //! `built_in_functions` contains the implementation of functions built-in to the Monkey language.
-use crate::object::Object;
 use crate::evaluator::EvalError;
+use crate::object::Object;
 
 // TODO: Document.
 
@@ -24,12 +24,16 @@ fn magic_number(_: Vec<Object>) -> Result<Object, EvalError> {
     Ok(Object::Integer(42))
 }
 
-fn puts (params: Vec<Object>) -> Result<Object, EvalError> {
+fn puts(params: Vec<Object>) -> Result<Object, EvalError> {
     for param in &params {
         match param {
             // We do a silly match on the string to remove quotes from result.
-            Object::Str(string) => { println!("{}", string); },
-            _ => { println!("{}", param); }
+            Object::Str(string) => {
+                println!("{}", string);
+            }
+            _ => {
+                println!("{}", param);
+            }
         };
     }
     Ok(Object::Null)
@@ -57,7 +61,7 @@ fn first(params: Vec<Object>) -> Result<Object, EvalError> {
             } else {
                 Ok(Object::Null)
             }
-        },
+        }
         _ => Err(EvalError::UnsupportedInputToBuiltIn),
     }
 }
@@ -70,11 +74,11 @@ fn last(params: Vec<Object>) -> Result<Object, EvalError> {
         Object::Array(arr) => {
             let ell = arr.len();
             if ell > 0 {
-                Ok(arr[ell-1].clone())
+                Ok(arr[ell - 1].clone())
             } else {
                 Ok(Object::Null)
             }
-        },
+        }
         _ => Err(EvalError::UnsupportedInputToBuiltIn),
     }
 }
@@ -93,7 +97,7 @@ fn rest(params: Vec<Object>) -> Result<Object, EvalError> {
             } else {
                 Ok(Object::Null)
             }
-        },
+        }
         _ => Err(EvalError::UnsupportedInputToBuiltIn),
     }
 }
@@ -107,7 +111,7 @@ fn push(params: Vec<Object>) -> Result<Object, EvalError> {
             let mut new_arr = arr.clone();
             new_arr.push(params[1].clone());
             Ok(Object::Array(new_arr))
-        },
+        }
         _ => Err(EvalError::UnsupportedInputToBuiltIn),
     }
 }

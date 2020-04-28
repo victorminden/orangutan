@@ -1,15 +1,14 @@
 use super::*;
 
-use crate::parser::Parser;
 use crate::lexer::Lexer;
 use crate::object::Environment;
-use std::rc::Rc;
+use crate::parser::Parser;
 use std::cell::RefCell;
+use std::rc::Rc;
 
 fn eval_test(input: &str) -> Result<Object, EvalError> {
     let mut parser = Parser::new(Lexer::new(input));
-    let env = 
-        Rc::new(RefCell::new(Environment::new()));
+    let env = Rc::new(RefCell::new(Environment::new()));
     match parser.parse_program() {
         Ok(program) => eval(&program, env),
         _ => panic!("Input could not be parsed!"),
@@ -47,9 +46,7 @@ fn eval_integer_expression_test() {
 
 #[test]
 fn eval_string_literal_test() {
-    let tests = vec![
-        ("\"Hello, world!\"", "Hello, world!"),
-    ];
+    let tests = vec![("\"Hello, world!\"", "Hello, world!")];
 
     for (input, want) in tests {
         let evaluated = eval_test(input);
@@ -83,9 +80,7 @@ fn eval_boolean_expression_test() {
 
 #[test]
 fn eval_string_expression_test() {
-    let tests = vec![
-        ("\"foo\" + \"bar\"", "foobar"),
-    ];
+    let tests = vec![("\"foo\" + \"bar\"", "foobar")];
 
     for (input, want) in tests {
         let evaluated = eval_test(input);
@@ -149,12 +144,15 @@ fn return_test() {
         ("return 10; 9;", 10),
         ("return 2 * 5; 9;", 10),
         ("9; return 2 * 5; 9;", 10),
-        ("if (10 > 1) {
+        (
+            "if (10 > 1) {
             if (10 > 1) {
                 return 10;
             }
             return 1;
-            }", 10),
+            }",
+            10,
+        ),
     ];
 
     for (input, want) in tests {
@@ -168,8 +166,14 @@ fn return_test() {
 #[test]
 fn errors_test() {
     let tests = vec![
-        ("5 + true;", "EvalError: Type mismatch for infix operator `+`"),
-        ("5 + true; 5", "EvalError: Type mismatch for infix operator `+`"),
+        (
+            "5 + true;",
+            "EvalError: Type mismatch for infix operator `+`",
+        ),
+        (
+            "5 + true; 5",
+            "EvalError: Type mismatch for infix operator `+`",
+        ),
         ("-true;", "EvalError: Type mismatch for prefix operator `-`"),
     ];
 
@@ -202,9 +206,7 @@ fn let_statements_test() {
 
 #[test]
 fn function_test() {
-    let tests = vec![
-        ("fn(x) {x+2;}", 1, "x", "{ (x + 2); }"),
-    ];
+    let tests = vec![("fn(x) {x+2;}", 1, "x", "{ (x + 2); }")];
 
     for (input, want_len, want_parameters, want_body) in tests {
         let evaluated = eval_test(input);
@@ -213,12 +215,12 @@ fn function_test() {
                 assert_eq!(parameters.len(), want_len);
                 assert_eq!(parameters.join(", "), want_parameters);
                 assert_eq!(body.to_string(), want_body);
-            },
+            }
             _ => panic!("Did not get Object::Function!"),
         }
     }
 }
- 
+
 #[test]
 fn function_application_test() {
     let tests = vec![
@@ -227,7 +229,10 @@ fn function_application_test() {
         ("let double = fn(x) { x * 2; }; double(5);", 10),
         ("let add = fn(x, y) { x + y; }; add(5, 5);", 10),
         ("let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20),
-        ("let twice = fn(x) { if (x>0) { twice(x-1) } else {12} }; twice(1)", 12),
+        (
+            "let twice = fn(x) { if (x>0) { twice(x-1) } else {12} }; twice(1)",
+            12,
+        ),
         ("fn(x) { x; }(5)", 5),
     ];
 
@@ -266,22 +271,17 @@ fn builtin_function_test() {
 
 #[test]
 fn rest_test() {
-    let tests = vec![
-        ("rest([1, 2, 3])", "[2, 3]"),
-        ("rest([])", "")
-    ];
+    let tests = vec![("rest([1, 2, 3])", "[2, 3]"), ("rest([])", "")];
 
     for (input, want) in tests {
         let evaluated = eval_test(input);
         match evaluated {
-            Ok(obj) => {
-                match obj {
-                    Object::Array(_) => assert_eq!(obj.to_string(), want),
-                    Object::Null => assert_eq!(want, ""),
-                    _ => panic!("Got unexpected object!"),
-                }
+            Ok(obj) => match obj {
+                Object::Array(_) => assert_eq!(obj.to_string(), want),
+                Object::Null => assert_eq!(want, ""),
+                _ => panic!("Got unexpected object!"),
             },
-            _ => panic!("Got error!")
+            _ => panic!("Got error!"),
         }
     }
 }
@@ -290,29 +290,25 @@ fn rest_test() {
 fn push_test() {
     let tests = vec![
         ("push([1, 2, 3], 4)", "[1, 2, 3, 4]"),
-        ("push([], [])", "[[]]")
+        ("push([], [])", "[[]]"),
     ];
 
     for (input, want) in tests {
         let evaluated = eval_test(input);
         match evaluated {
-            Ok(obj) => {
-                match obj {
-                    Object::Array(_) => assert_eq!(obj.to_string(), want),
-                    Object::Null => assert_eq!(want, ""),
-                    _ => panic!("Got unexpected object!"),
-                }
+            Ok(obj) => match obj {
+                Object::Array(_) => assert_eq!(obj.to_string(), want),
+                Object::Null => assert_eq!(want, ""),
+                _ => panic!("Got unexpected object!"),
             },
-            _ => panic!("Got error!")
+            _ => panic!("Got error!"),
         }
     }
 }
 
 #[test]
 fn array_test() {
-    let tests = vec![
-        ("[1, 2*2, 3+3]", "[1, 4, 6]"),
-    ];
+    let tests = vec![("[1, 2*2, 3+3]", "[1, 4, 6]")];
 
     for (input, want) in tests {
         let evaluated = eval_test(input);
@@ -321,7 +317,7 @@ fn array_test() {
                 if let Ok(obj) = evaluated {
                     assert_eq!(obj.to_string(), want)
                 }
-            },
+            }
             _ => panic!("Did not get Object::Array!"),
         }
     }
@@ -329,9 +325,7 @@ fn array_test() {
 
 #[test]
 fn hash_test() {
-    let tests = vec![
-        ("{1: 2*2, \"a\": len(\"bcd\")}", "{\"a\": 3, 1: 4}"),
-    ];
+    let tests = vec![("{1: 2*2, \"a\": len(\"bcd\")}", "{\"a\": 3, 1: 4}")];
 
     for (input, want) in tests {
         let evaluated = eval_test(input);
@@ -340,12 +334,11 @@ fn hash_test() {
                 if let Ok(obj) = evaluated {
                     assert_eq!(obj.to_string(), want)
                 }
-            },
+            }
             _ => panic!("Did not get Object::Hash!"),
         }
     }
 }
-
 
 #[test]
 fn array_index_test() {
@@ -355,7 +348,10 @@ fn array_index_test() {
         ("[1, 2, 3][2]", 3),
         ("let i = 0; [1][i]", 1),
         ("[1, 2, 3][1 + 1]", 3),
-        ("let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];", 6),
+        (
+            "let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];",
+            6,
+        ),
         ("let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]", 2),
         ("[1, 2, 3][-1]", -1),
     ];
@@ -389,7 +385,6 @@ fn hash_index_test() {
     }
 }
 
-
 #[test]
 fn map_function_test() {
     let input = "
@@ -407,12 +402,12 @@ fn map_function_test() {
     let double = fn(x) { x * 2 };
     map(a, double);";
     let evaluated = eval_test(input);
-    match evaluated { 
+    match evaluated {
         Ok(Object::Array(_)) => {
             if let Ok(obj) = evaluated {
                 assert_eq!(obj.to_string(), "[2, 4, 6, 8]")
             }
-        },
+        }
         _ => panic!("Did not get Object::Array!"),
     }
 }
@@ -435,11 +430,8 @@ fn sum_function_test() {
     };
     sum([1, 2, 3, 4, 5]);";
     let evaluated = eval_test(input);
-    match evaluated { 
-        Ok(Object::Integer(int)) => {
-            assert_eq!(int, 15)
-        },
+    match evaluated {
+        Ok(Object::Integer(int)) => assert_eq!(int, 15),
         _ => panic!("Did not get Object::Integer!"),
     }
 }
-

@@ -28,10 +28,13 @@ impl SymbolStore {
     }
 
     pub fn define_with_scope(&mut self, name: &String, scope: SymbolScope) -> &Symbol {
-        self.store.insert(name.clone(), Symbol {
-            scope,
-            index: self.num_definitions,
-        });
+        self.store.insert(
+            name.clone(),
+            Symbol {
+                scope,
+                index: self.num_definitions,
+            },
+        );
         self.num_definitions += 1;
         &self.store[name]
     }
@@ -53,13 +56,13 @@ pub struct SymbolTable {
 impl SymbolTable {
     pub fn new() -> Self {
         SymbolTable {
-            stores: vec![ SymbolStore::new() ],
+            stores: vec![SymbolStore::new()],
             store_index: 1,
         }
     }
 
     pub fn num_definitions(&self) -> usize {
-        self.stores[self.store_index-1].num_definitions as usize
+        self.stores[self.store_index - 1].num_definitions as usize
     }
 
     pub fn enter_scope(&mut self) {
@@ -73,7 +76,11 @@ impl SymbolTable {
     }
 
     pub fn define(&mut self, name: &String) -> &Symbol {
-        let scope = if self.store_index > 1 { SymbolScope::Local } else { SymbolScope::Global };
+        let scope = if self.store_index > 1 {
+            SymbolScope::Local
+        } else {
+            SymbolScope::Global
+        };
         self.stores[self.store_index - 1].define_with_scope(name, scope)
     }
 
@@ -90,7 +97,7 @@ impl SymbolTable {
                 } else {
                     Err(error)
                 }
-            },
+            }
             good_result => good_result,
         }
     }
@@ -103,8 +110,14 @@ mod tests {
     #[test]
     fn define_test() {
         let expected = vec![
-            Symbol { scope: SymbolScope::Global, index: 0 },
-            Symbol { scope: SymbolScope::Global, index: 1 },
+            Symbol {
+                scope: SymbolScope::Global,
+                index: 0,
+            },
+            Symbol {
+                scope: SymbolScope::Global,
+                index: 1,
+            },
         ];
         let mut global = SymbolTable::new();
         let a = global.define(&String::from("a"));
@@ -116,8 +129,14 @@ mod tests {
     #[test]
     fn resolve_global_test() {
         let expected = vec![
-            Symbol { scope: SymbolScope::Global, index: 0 },
-            Symbol { scope: SymbolScope::Global, index: 1 },
+            Symbol {
+                scope: SymbolScope::Global,
+                index: 0,
+            },
+            Symbol {
+                scope: SymbolScope::Global,
+                index: 1,
+            },
         ];
         let mut global = SymbolTable::new();
         global.define(&String::from("a"));

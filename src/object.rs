@@ -1,19 +1,19 @@
 //! Object
-//! 
+//!
 //! `object` contains types representing evaluated objects from a Monkey program.
 //! These types are used while interpreting Monkey programs.
-mod environment;
 mod built_in_functions;
+mod environment;
 
-use std::fmt;
-use std::cell::RefCell;
-use std::rc::Rc;
-use std::collections::HashMap;
-pub use self::environment::*;
 pub use self::built_in_functions::*;
+pub use self::environment::*;
 use crate::ast::BlockStatement;
-use crate::evaluator::EvalError;
 use crate::code::CompiledFunction;
+use crate::evaluator::EvalError;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::fmt;
+use std::rc::Rc;
 
 pub type BuiltInFunction = fn(Vec<Object>) -> Result<Object, EvalError>;
 pub type SharedEnvironment = Rc<RefCell<Environment>>;
@@ -62,19 +62,25 @@ impl fmt::Display for Object {
             Object::Return(boxed_object) => write!(f, "{}", **boxed_object),
             Object::Function(parameters, body, _) => {
                 write!(f, "fn({}) {}", parameters.join(", "), body)
-            },
+            }
             Object::BuiltIn(_) => write!(f, "Built-In function"),
-            Object::Array(items) => {
-                write!(f, "[{}]",
-                    items.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(", "))
-            },
+            Object::Array(items) => write!(
+                f,
+                "[{}]",
+                items
+                    .iter()
+                    .map(|x| x.to_string())
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            ),
             Object::Hash(elements) => {
-                let mut formatted_elements = elements.iter().map(|(x, y)| format!("{}: {}", x.to_string(), y.to_string()))
+                let mut formatted_elements = elements
+                    .iter()
+                    .map(|(x, y)| format!("{}: {}", x.to_string(), y.to_string()))
                     .collect::<Vec<String>>();
                 formatted_elements.sort();
                 write!(f, "{{{}}}", formatted_elements.join(", "))
-                
-            },
+            }
             Object::CompiledFunction(func) => write!(f, "{}", func),
         }
     }

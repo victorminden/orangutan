@@ -1,5 +1,5 @@
 //! Precedence
-//! 
+//!
 //! `precedence` contains an enum type representing the precedence of operators in the Monkey language.
 
 use crate::token::Token;

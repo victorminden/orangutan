@@ -1,6 +1,6 @@
 use super::*;
+use crate::ast::{Expression, Statement};
 use crate::lexer::Lexer;
-use crate::ast::{Statement, Expression};
 use crate::token::Token;
 
 #[test]
@@ -11,11 +11,7 @@ fn let_statement_test() -> Result<(), ParseError> {
     let foobar = x + y;
     ";
 
-    let tests = vec![
-        "x",
-        "y",
-        "foobar",
-    ];
+    let tests = vec!["x", "y", "foobar"];
 
     let mut parser = Parser::new(Lexer::new(input));
     let program = parser.parse_program()?;
@@ -25,7 +21,7 @@ fn let_statement_test() -> Result<(), ParseError> {
         match statement {
             Statement::Let(name, _) => {
                 assert_eq!(name, expected_name);
-            },
+            }
             _ => panic!(),
         }
     }
@@ -40,14 +36,16 @@ fn return_statement_test() -> Result<(), ParseError> {
     return 10;
     return 9932;
     ";
-    
+
     let mut parser = Parser::new(Lexer::new(input));
     let program = parser.parse_program()?;
     parser.print_errors();
     let mut count = 0;
     for statement in program.statements {
         match statement {
-            Statement::Return(_) => { count += 1; },
+            Statement::Return(_) => {
+                count += 1;
+            }
             _ => panic!(),
         }
     }
@@ -62,43 +60,37 @@ fn let_and_return_statements_with_expressions_test() -> Result<(), ParseError> {
     let a = b + (c - d) / e;
     return a / b;
     ";
-    
-    let expected = vec![
-        "let a = (b + ((c - d) / e));",
-        "return (a / b);",
-    ];
+
+    let expected = vec!["let a = (b + ((c - d) / e));", "return (a / b);"];
 
     let mut parser = Parser::new(Lexer::new(input));
     let program = parser.parse_program()?;
     parser.print_errors();
     assert_eq!(program.statements.len(), expected.len());
 
-    for (expected, statement) in 
-    expected.iter().zip(program.statements.iter()) {
+    for (expected, statement) in expected.iter().zip(program.statements.iter()) {
         assert_eq!(&statement.to_string(), expected);
     }
 
     Ok(())
 }
 
-
 #[test]
 fn identifier_statement_test() -> Result<(), ParseError> {
     let input = "foobar;";
-    
+
     let mut parser = Parser::new(Lexer::new(input));
     let program = parser.parse_program()?;
     parser.print_errors();
     assert_eq!(program.statements.len(), 1);
-   
+
     if let Statement::Expression(exp) = &program.statements[0] {
         if let Expression::Ident(name) = exp {
             assert_eq!(name, "foobar");
         } else {
-           panic!();
+            panic!();
         }
-    }
-    else {
+    } else {
         panic!();
     }
 
@@ -108,20 +100,19 @@ fn identifier_statement_test() -> Result<(), ParseError> {
 #[test]
 fn integer_literal_statement_test() -> Result<(), ParseError> {
     let input = "5";
-    
+
     let mut parser = Parser::new(Lexer::new(input));
     let program = parser.parse_program()?;
     parser.print_errors();
     assert_eq!(program.statements.len(), 1);
-   
+
     if let Statement::Expression(exp) = &program.statements[0] {
         if let Expression::IntegerLiteral(val) = exp {
             assert_eq!(*val, 5);
         } else {
             panic!();
         }
-    }
-    else {
+    } else {
         panic!();
     }
 
@@ -131,18 +122,16 @@ fn integer_literal_statement_test() -> Result<(), ParseError> {
 #[test]
 fn prefix_statement_test() -> Result<(), ParseError> {
     let input = "!5; -15;";
-    let expected = vec![
-        (Token::Bang, 5),
-        (Token::Minus, 15),
-    ];
+    let expected = vec![(Token::Bang, 5), (Token::Minus, 15)];
 
     let mut parser = Parser::new(Lexer::new(input));
     let program = parser.parse_program()?;
     parser.print_errors();
     assert_eq!(program.statements.len(), 2);
 
-    for ((expected_prefix, expected_literal), statement) in 
-    expected.iter().zip(program.statements.iter()) {
+    for ((expected_prefix, expected_literal), statement) in
+        expected.iter().zip(program.statements.iter())
+    {
         let expression = match statement {
             Statement::Expression(exp) => exp,
             _ => panic!(),
@@ -190,8 +179,9 @@ fn infix_statement_test() -> Result<(), ParseError> {
     parser.print_errors();
     assert_eq!(program.statements.len(), 8);
 
-    for ((expected_left, expected_infix, expected_right), statement) in 
-    expected.iter().zip(program.statements.iter()) {
+    for ((expected_left, expected_infix, expected_right), statement) in
+        expected.iter().zip(program.statements.iter())
+    {
         let expression = match statement {
             Statement::Expression(exp) => exp,
             _ => panic!(),
@@ -240,7 +230,7 @@ fn operator_precedence_test() -> Result<(), ParseError> {
     a * [1, 2, 3, 4][b * c] * d
     add(a * b[2], b[1], 2 * [1, 2][1])
     ";
-    
+
     let expected = vec![
         "((-a) * b);",
         "(!(-a));",
@@ -269,8 +259,7 @@ fn operator_precedence_test() -> Result<(), ParseError> {
     parser.print_errors();
     assert_eq!(program.statements.len(), expected.len());
 
-    for (expected, statement) in 
-    expected.iter().zip(program.statements.iter()) {
+    for (expected, statement) in expected.iter().zip(program.statements.iter()) {
         assert_eq!(&statement.to_string(), expected);
     }
 
@@ -281,19 +270,15 @@ fn operator_precedence_test() -> Result<(), ParseError> {
 fn boolean_literal_statement_test() -> Result<(), ParseError> {
     let input = "false 
     true";
-    
-    let expected = vec![
-        "false;",
-        "true;",
-    ];
+
+    let expected = vec!["false;", "true;"];
 
     let mut parser = Parser::new(Lexer::new(input));
     let program = parser.parse_program()?;
     parser.print_errors();
     assert_eq!(program.statements.len(), expected.len());
 
-    for (expected, statement) in 
-    expected.iter().zip(program.statements.iter()) {
+    for (expected, statement) in expected.iter().zip(program.statements.iter()) {
         assert_eq!(&statement.to_string(), expected);
     }
 
@@ -309,7 +294,6 @@ fn if_statement_test() -> Result<(), ParseError> {
     parser.print_errors();
     assert_eq!(program.statements.len(), 1);
 
-    
     if let Statement::Expression(expr) = &program.statements[0] {
         if let Expression::If(condition, consequence, None) = expr {
             assert_eq!(condition.to_string(), "(x < y)");
@@ -332,7 +316,6 @@ fn if_statement_with_else_test() -> Result<(), ParseError> {
     parser.print_errors();
     assert_eq!(program.statements.len(), 1);
 
-    
     if let Statement::Expression(expr) = &program.statements[0] {
         if let Expression::If(condition, consequence, Some(alt_bs)) = expr {
             assert_eq!(condition.to_string(), "(x < y)");
@@ -353,10 +336,10 @@ fn function_literal_statement_test() -> Result<(), ParseError> {
 
     let mut parser = Parser::new(Lexer::new(input));
     let program = parser.parse_program()?;
- 
+
     parser.print_errors();
     assert_eq!(program.statements.len(), 1);
-    
+
     if let Statement::Expression(expr) = &program.statements[0] {
         if let Expression::FunctionLiteral(parameters, body) = expr {
             assert_eq!(parameters.join(", ").to_string(), "x, y");
@@ -379,10 +362,10 @@ fn function_parameter_edge_case_test() -> Result<(), ParseError> {
 
     let mut parser = Parser::new(Lexer::new(input));
     let program = parser.parse_program()?;
- 
+
     parser.print_errors();
     assert_eq!(program.statements.len(), 3);
-    
+
     for (expected, statement) in expected.iter().zip(program.statements.iter()) {
         assert_eq!(&statement.to_string(), expected);
     }
@@ -396,7 +379,7 @@ fn call_expression_test() -> Result<(), ParseError> {
 
     let mut parser = Parser::new(Lexer::new(input));
     let program = parser.parse_program()?;
- 
+
     parser.print_errors();
     assert_eq!(program.statements.len(), 1);
     assert_eq!(&program.statements[0].to_string(), expected);
@@ -409,20 +392,15 @@ fn string_literal_statement_test() -> Result<(), ParseError> {
     let input = "\"Hello\" 
         \"world\"
         \"hello, world\"";
-    
-    let expected = vec![
-        "\"Hello\";",
-        "\"world\";",
-        "\"hello, world\";",
-    ];
+
+    let expected = vec!["\"Hello\";", "\"world\";", "\"hello, world\";"];
 
     let mut parser = Parser::new(Lexer::new(input));
     let program = parser.parse_program()?;
     parser.print_errors();
     assert_eq!(program.statements.len(), expected.len());
 
-    for (expected, statement) in 
-    expected.iter().zip(program.statements.iter()) {
+    for (expected, statement) in expected.iter().zip(program.statements.iter()) {
         assert_eq!(&statement.to_string(), expected);
     }
 
@@ -434,19 +412,15 @@ fn array_literal_statement_test() -> Result<(), ParseError> {
     let input = "
     [1, 2];
     [1, 2*2, 3+3]";
-    
-    let expected = vec![
-    "[1, 2];",
-    "[1, (2 * 2), (3 + 3)];",
-    ];
+
+    let expected = vec!["[1, 2];", "[1, (2 * 2), (3 + 3)];"];
 
     let mut parser = Parser::new(Lexer::new(input));
     let program = parser.parse_program()?;
     parser.print_errors();
     assert_eq!(program.statements.len(), expected.len());
 
-    for (expected, statement) in 
-    expected.iter().zip(program.statements.iter()) {
+    for (expected, statement) in expected.iter().zip(program.statements.iter()) {
         assert_eq!(&statement.to_string(), expected);
     }
 
@@ -456,18 +430,15 @@ fn array_literal_statement_test() -> Result<(), ParseError> {
 #[test]
 fn array_index_statement_test() -> Result<(), ParseError> {
     let input = "myArray[1+1]";
-    
-    let expected = vec![
-    "(myArray[(1 + 1)]);",
-    ];
+
+    let expected = vec!["(myArray[(1 + 1)]);"];
 
     let mut parser = Parser::new(Lexer::new(input));
     let program = parser.parse_program()?;
     parser.print_errors();
     assert_eq!(program.statements.len(), expected.len());
 
-    for (expected, statement) in 
-    expected.iter().zip(program.statements.iter()) {
+    for (expected, statement) in expected.iter().zip(program.statements.iter()) {
         assert_eq!(&statement.to_string(), expected);
     }
 
@@ -479,19 +450,15 @@ fn hash_literal_statement_test() -> Result<(), ParseError> {
     let input = "
     {1: 2, 3: 4, \"one\": \"two\"};
     {};";
-    
-    let expected = vec![
-    "{1: 2, 3: 4, \"one\": \"two\"};",
-    "{};",
-    ];
+
+    let expected = vec!["{1: 2, 3: 4, \"one\": \"two\"};", "{};"];
 
     let mut parser = Parser::new(Lexer::new(input));
     let program = parser.parse_program()?;
     parser.print_errors();
     assert_eq!(program.statements.len(), expected.len());
 
-    for (expected, statement) in 
-    expected.iter().zip(program.statements.iter()) {
+    for (expected, statement) in expected.iter().zip(program.statements.iter()) {
         assert_eq!(&statement.to_string(), expected);
     }
 

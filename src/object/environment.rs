@@ -1,11 +1,11 @@
 //! Environment
-//! 
+//!
 //! `environment` contains a simple struct representing the environment of the Monkey interpreter.
-use std::collections::HashMap;
 use crate::object::Object;
+use std::collections::HashMap;
 
 /// Represents the environment of objects already recognized by the interpreter.
-/// 
+///
 /// Such objects are known about due to the interpretation of prior statements.
 #[derive(Default, Clone, Debug)]
 pub struct Environment {

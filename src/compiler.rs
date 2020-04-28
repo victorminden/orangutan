@@ -2,16 +2,16 @@
 mod compiler_test;
 mod symbol_table;
 
-use crate::code::{Instructions, Constant, Bytecode, OpCode, CompiledFunction};
-use crate::ast::{Program, Statement, Expression, BlockStatement};
+pub use self::symbol_table::*;
+use crate::ast::{BlockStatement, Expression, Program, Statement};
+use crate::code::{Bytecode, CompiledFunction, Constant, Instructions, OpCode};
 use crate::object::Object;
 use crate::token::Token;
-pub use self::symbol_table::*;
 
+use std::cell::RefCell;
 use std::convert::TryFrom;
 use std::mem;
 use std::rc::Rc;
-use std::cell::RefCell;
 
 pub struct CompilationScope {
     instructions: Instructions,
@@ -40,7 +40,7 @@ pub struct Compiler {
     symbol_table: Rc<RefCell<SymbolTable>>,
     scopes: Vec<CompilationScope>,
     scope_index: usize,
-} 
+}
 
 #[derive(Debug)]
 pub enum CompileError {
@@ -51,16 +51,20 @@ pub enum CompileError {
 
 impl Compiler {
     pub fn new() -> Self {
-        Compiler::new_with_state(Rc::new(RefCell::new(SymbolTable::new())), Rc::new(RefCell::new(Vec::new())))
+        Compiler::new_with_state(
+            Rc::new(RefCell::new(SymbolTable::new())),
+            Rc::new(RefCell::new(Vec::new())),
+        )
     }
 
-    pub fn new_with_state(symbol_table: Rc<RefCell<SymbolTable>>, constants: Rc<RefCell<Vec<Constant>>>) -> Self {
+    pub fn new_with_state(
+        symbol_table: Rc<RefCell<SymbolTable>>,
+        constants: Rc<RefCell<Vec<Constant>>>,
+    ) -> Self {
         Compiler {
             constants,
             symbol_table,
-            scopes: vec![
-                CompilationScope::new(),
-            ],
+            scopes: vec![CompilationScope::new()],
             scope_index: 0,
         }
     }
@@ -72,7 +76,7 @@ impl Compiler {
     // TODO: Determine if bytecode can return a reference / take ownership.
     pub fn bytecode(&self) -> Bytecode {
         Bytecode::new(
-            self.current_instructions().clone(), 
+            self.current_instructions().clone(),
             self.constants.borrow().clone(),
         )
     }
@@ -112,7 +116,7 @@ impl Compiler {
             Statement::Expression(expr) => {
                 self.compile_expression(expr)?;
                 self.emit(OpCode::Pop.make());
-            },
+            }
             Statement::Let(name, expr) => {
                 self.compile_expression(expr)?;
                 let symbol = *self.symbol_table.borrow_mut().define(name);
@@ -121,11 +125,11 @@ impl Compiler {
                     SymbolScope::Local => OpCode::SetLocal.make_u8(symbol.index as u8),
                 };
                 self.emit(insts);
-            },
+            }
             Statement::Return(value) => {
                 self.compile_expression(value)?;
                 self.emit(OpCode::ReturnValue.make());
-            },
+            }
             _ => return Err(CompileError::UnknownError),
         }
         Ok(())
@@ -139,7 +143,7 @@ impl Compiler {
                     self.compile_expression(expr)?;
                 }
                 self.emit(OpCode::Call.make_u8(args.len() as u8));
-            },
+            }
             Expression::FunctionLiteral(_, block_statement) => {
                 self.enter_scope();
                 self.compile_block_statement(block_statement)?;
@@ -149,27 +153,27 @@ impl Compiler {
                 }
                 let num_locals = self.symbol_table.borrow().num_definitions();
                 let instructions = self.leave_scope()?;
-                let compiled_function = CompiledFunction { 
-                    instructions, 
+                let compiled_function = CompiledFunction {
+                    instructions,
                     num_locals,
                 };
                 let idx = self.add_constant(Constant::CompiledFunction(compiled_function));
                 self.emit(OpCode::Constant.make_u16(idx));
-            },
+            }
             Expression::Ident(name) => {
                 // Use a separate statement to catch the result so that we can unborrow the symbol_table.
                 let symbol_result = self.symbol_table.borrow().resolve(name);
                 match symbol_result {
-                    Ok(symbol) => { 
+                    Ok(symbol) => {
                         let insts = match symbol.scope {
                             SymbolScope::Global => OpCode::GetGlobal.make_u16(symbol.index),
-                            SymbolScope::Local => OpCode::GetLocal.make_u8(symbol.index as u8), 
+                            SymbolScope::Local => OpCode::GetLocal.make_u8(symbol.index as u8),
                         };
                         self.emit(insts);
-                    },
+                    }
                     Err(_) => return Err(CompileError::SymbolNotFound),
                 }
-            },
+            }
             Expression::If(conditional, consequence, alternative) => {
                 self.compile_expression(conditional)?;
                 let jump_not_truthy_pos = self.emit(OpCode::JumpNotTruthy.make_u16(9999));
@@ -177,7 +181,7 @@ impl Compiler {
                 self.remove_last_pop();
                 let jump_pos = self.emit(OpCode::Jump.make_u16(9999));
                 self.replace_instructions(
-                    jump_not_truthy_pos, 
+                    jump_not_truthy_pos,
                     OpCode::JumpNotTruthy.make_u16(self.current_instructions().len() as u16),
                 );
                 match alternative {
@@ -187,23 +191,22 @@ impl Compiler {
                     Some(alt) => {
                         self.compile_block_statement(&alt)?;
                         self.remove_last_pop();
-                    },
+                    }
                 }
                 self.replace_instructions(
-                    jump_pos, 
+                    jump_pos,
                     OpCode::Jump.make_u16(self.current_instructions().len() as u16),
                 );
-                
-            },
+            }
             Expression::Prefix(prefix, expr) => {
                 self.compile_expression(expr)?;
                 let opcode = match prefix {
                     Token::Bang => OpCode::Bang,
                     Token::Minus => OpCode::Minus,
-                    _ => return Err(CompileError::UnknownOperator)
+                    _ => return Err(CompileError::UnknownOperator),
                 };
                 self.emit(opcode.make());
-            },
+            }
             Expression::Infix(left, infix, right) => {
                 match infix {
                     Token::LessThan => {
@@ -216,7 +219,7 @@ impl Compiler {
                         self.compile_expression(right)?;
                     }
                 }
-                
+
                 let opcode = match infix {
                     Token::Plus => OpCode::Add,
                     Token::Minus => OpCode::Sub,
@@ -228,41 +231,41 @@ impl Compiler {
                     _ => return Err(CompileError::UnknownOperator),
                 };
                 self.emit(opcode.make());
-            },
+            }
             Expression::IntegerLiteral(int) => {
                 let int = Object::Integer(*int);
                 let instructions = OpCode::Constant.make_u16(self.add_constant(int));
                 self.emit(instructions);
-            },
+            }
             Expression::StringLiteral(str) => {
                 let str = Object::Str(str.clone());
                 let instructions = OpCode::Constant.make_u16(self.add_constant(str));
                 self.emit(instructions);
-            },
+            }
             Expression::BooleanLiteral(bool) => {
-                let opcode = if *bool {OpCode::True} else {OpCode::False};
+                let opcode = if *bool { OpCode::True } else { OpCode::False };
                 self.emit(opcode.make());
-            },
+            }
             Expression::ArrayLiteral(elements) => {
                 for expr in elements {
                     self.compile_expression(expr)?;
                 }
                 self.emit(OpCode::Array.make_u16(elements.len() as u16));
-            },
+            }
             Expression::HashLiteral(keys_and_values) => {
                 for (key, value) in keys_and_values {
                     self.compile_expression(key)?;
                     self.compile_expression(value)?;
                 }
                 self.emit(OpCode::Hash.make_u16(2 * keys_and_values.len() as u16));
-            },
+            }
             Expression::Index(left, right) => {
                 self.compile_expression(&left)?;
                 self.compile_expression(&right)?;
                 self.emit(OpCode::Index.make());
-            },
-            _ => return Err(CompileError::UnknownError)
-        }    
+            }
+            _ => return Err(CompileError::UnknownError),
+        }
         Ok(())
     }
 
@@ -317,10 +320,10 @@ impl CompilationScope {
 
     fn remove_last_pop(&mut self) {
         if !self.last_instruction_is(OpCode::Pop) {
-            return
+            return;
         }
-        self.last_instruction  = mem::replace(&mut self.previous_instruction, None);
-        self.instructions.truncate(self.instructions.len()-1);
+        self.last_instruction = mem::replace(&mut self.previous_instruction, None);
+        self.instructions.truncate(self.instructions.len() - 1);
     }
 
     fn replace_instructions(&mut self, pos: usize, new_instructions: Instructions) {
@@ -339,11 +342,11 @@ impl CompilationScope {
 
     fn replace_last_pop_with_return(&mut self) {
         if !self.last_instruction_is(OpCode::Pop) {
-            return
+            return;
         }
         let inst = match &mut self.last_instruction {
             Some(value) => value,
-            _ => return
+            _ => return,
         };
         inst.opcode = OpCode::ReturnValue;
         let last_pos = inst.position;

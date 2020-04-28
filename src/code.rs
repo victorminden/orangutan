@@ -1,9 +1,9 @@
 //! Code
-//! 
+//!
 //! `code` contains functionality relating to bytecode for the Monkey language.
+use crate::object::Object;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use std::convert::TryFrom;
-use crate::object::Object;
 use std::fmt;
 
 pub type Instructions = Vec<u8>;
@@ -160,7 +160,7 @@ impl OpCode {
                 name: String::from("OpFalse"),
                 widths: vec![],
             },
-            OpCode::Equal=> Definition {
+            OpCode::Equal => Definition {
                 name: String::from("OpEqual"),
                 widths: vec![],
             },
@@ -203,8 +203,8 @@ pub fn read_operands(def: &Definition, instructions: &ReadOnlyInstructions) -> (
     for w in &def.widths {
         match w {
             2 => {
-                operands.push(read_uint16(instructions[offset], instructions[offset+1]));
-            },
+                operands.push(read_uint16(instructions[offset], instructions[offset + 1]));
+            }
             1 => {
                 // Even though the operand is 8-bit, we convert to 16 for read-out for ease of implementation.
                 operands.push(instructions[offset] as u16)
@@ -239,7 +239,7 @@ pub fn disassemble(instructions: &ReadOnlyInstructions) -> String {
                 }
                 ip += n;
                 all_instructions.push(current_instruction.join(" "));
-            },
+            }
         }
     }
     all_instructions.join("\n")
@@ -252,9 +252,7 @@ mod tests {
 
     #[test]
     fn opcode_test() {
-        let tests = vec![
-            (1u8, OpCode::Constant),
-        ];
+        let tests = vec![(1u8, OpCode::Constant)];
 
         assert_eq!(size_of::<OpCode>(), 1);
         for (input, want) in tests {
@@ -266,9 +264,11 @@ mod tests {
     #[test]
     fn make_u16_test() {
         // Op, Operands, Expected
-        let tests = vec![
-            (OpCode::Constant, 65534u16, vec![OpCode::Constant.into(), 255u8, 254u8]),
-        ];
+        let tests = vec![(
+            OpCode::Constant,
+            65534u16,
+            vec![OpCode::Constant.into(), 255u8, 254u8],
+        )];
 
         for (op, operand, want) in tests {
             let got = op.make_u16(operand);
@@ -279,9 +279,11 @@ mod tests {
     #[test]
     fn make_u8_test() {
         // Op, Operands, Expected
-        let tests = vec![
-            (OpCode::Constant, 255u8, vec![OpCode::Constant.into(), 255u8]),
-        ];
+        let tests = vec![(
+            OpCode::Constant,
+            255u8,
+            vec![OpCode::Constant.into(), 255u8],
+        )];
 
         for (op, operand, want) in tests {
             let got = op.make_u8(operand);
@@ -291,9 +293,12 @@ mod tests {
 
     #[test]
     fn read_operands_test() {
-        let tests = vec![
-            (OpCode::Constant.make_u16(65535), OpCode::Constant.definition(), vec![65535], 2),
-        ];
+        let tests = vec![(
+            OpCode::Constant.make_u16(65535),
+            OpCode::Constant.definition(),
+            vec![65535],
+            2,
+        )];
         for (instructions, def, want_operands, want_n) in tests {
             let (operands, n) = read_operands(&def, &instructions[1..]);
             assert_eq!(n, want_n);
@@ -309,7 +314,8 @@ mod tests {
             OpCode::Add.make(),
             OpCode::Constant.make_u16(2),
             OpCode::Constant.make_u16(65535),
-        ].concat();
+        ]
+        .concat();
         let expected = "0000 OpAdd\n0001 OpConstant 2\n0004 OpConstant 65535";
         assert_eq!(disassemble(&instructions), expected);
     }

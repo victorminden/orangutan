@@ -1,9 +1,9 @@
 use super::*;
 
-use crate::lexer::Lexer;
-use crate::parser::Parser;
 use crate::compiler::Compiler;
+use crate::lexer::Lexer;
 use crate::object::Object;
+use crate::parser::Parser;
 
 fn run(input: &str) -> Result<Object, VmError> {
     let mut p = Parser::new(Lexer::new(input));
@@ -75,12 +75,16 @@ fn boolean_expression_test() {
     ];
     for (test_input, expected) in tests {
         match run(test_input) {
-            Ok(obj) => assert_eq!(obj.to_string(), expected.to_string(), "Wrong output on input \"{}\"!", test_input),
+            Ok(obj) => assert_eq!(
+                obj.to_string(),
+                expected.to_string(),
+                "Wrong output on input \"{}\"!",
+                test_input
+            ),
             _ => panic!(format!("VM error on input {}!", test_input)),
         }
     }
 }
-
 
 #[test]
 fn conditional_test() {
@@ -98,8 +102,15 @@ fn conditional_test() {
     ];
     for (test_input, expected) in tests {
         match run(test_input) {
-            Ok(Object::Null) => assert_eq!(-1, expected, "Wrong output on input \"{}\"!", test_input),
-            Ok(obj) => assert_eq!(obj.to_string(), expected.to_string(), "Wrong output on input \"{}\"!", test_input),
+            Ok(Object::Null) => {
+                assert_eq!(-1, expected, "Wrong output on input \"{}\"!", test_input)
+            }
+            Ok(obj) => assert_eq!(
+                obj.to_string(),
+                expected.to_string(),
+                "Wrong output on input \"{}\"!",
+                test_input
+            ),
             _ => panic!(format!("VM error on input \"{}\"!", test_input)),
         }
     }
@@ -114,8 +125,15 @@ fn global_let_test() {
     ];
     for (test_input, expected) in tests {
         match run(test_input) {
-            Ok(Object::Null) => assert_eq!(-1, expected, "Wrong output on input \"{}\"!", test_input),
-            Ok(obj) => assert_eq!(obj.to_string(), expected.to_string(), "Wrong output on input \"{}\"!", test_input),
+            Ok(Object::Null) => {
+                assert_eq!(-1, expected, "Wrong output on input \"{}\"!", test_input)
+            }
+            Ok(obj) => assert_eq!(
+                obj.to_string(),
+                expected.to_string(),
+                "Wrong output on input \"{}\"!",
+                test_input
+            ),
             _ => panic!(format!("VM error on input \"{}\"!", test_input)),
         }
     }
@@ -180,7 +198,7 @@ fn index_test() {
         ("{1: 1, 2: 2}[1]", "1"),
         ("{1: 1, 2: 2}[2]", "2"),
         ("{1: 1}[0]", "null"),
-        ("{}[0]", "null"), 
+        ("{}[0]", "null"),
     ];
     for (test_input, expected) in tests {
         match run(test_input) {
@@ -194,22 +212,37 @@ fn index_test() {
 fn no_args_function_call_test() {
     let tests = vec![
         ("fn() {5 + 11}()", "16"),
-        ("let fivePlusTen = fn() { 5 + 10 };
-        fivePlusTen();", "15"),
-        ("let noReturn = fn() { };
-        noReturn();", "null"),
-        ("let noReturn = fn() { };
+        (
+            "let fivePlusTen = fn() { 5 + 10 };
+        fivePlusTen();",
+            "15",
+        ),
+        (
+            "let noReturn = fn() { };
+        noReturn();",
+            "null",
+        ),
+        (
+            "let noReturn = fn() { };
         let noReturnTwo = fn() { noReturn(); };
         noReturn();
-        noReturnTwo();", "null"),
-        ("let returnsOne = fn() { 1; };
+        noReturnTwo();",
+            "null",
+        ),
+        (
+            "let returnsOne = fn() { 1; };
         let returnsOneReturner = fn() { returnsOne; };
-        returnsOneReturner()();", "1"),
-        ("let returnsOneReturner = fn() {
+        returnsOneReturner()();",
+            "1",
+        ),
+        (
+            "let returnsOneReturner = fn() {
             let returnsOne = fn() { 1; };
             returnsOne;
             };
-            returnsOneReturner()();", "1"),
+            returnsOneReturner()();",
+            "1",
+        ),
     ];
     for (test_input, expected) in tests {
         match run(test_input) {
@@ -223,15 +256,25 @@ fn no_args_function_call_test() {
 fn calling_functions_with_bindings_test() {
     let tests = vec![
         ("let one = fn() { let one = 1; one }; one();", 1),
-        ("let oneAndTwo = fn() { let one = 1; let two = 2; one + two; };
-        oneAndTwo();", 3),
-        ("let oneAndTwo = fn() { let one = 1; let two = 2; one + two; };
+        (
+            "let oneAndTwo = fn() { let one = 1; let two = 2; one + two; };
+        oneAndTwo();",
+            3,
+        ),
+        (
+            "let oneAndTwo = fn() { let one = 1; let two = 2; one + two; };
         let threeAndFour = fn() { let three = 3; let four = 4; three + four; };
-        oneAndTwo() + threeAndFour();", 10),
-        ("let firstFoobar = fn() { let foobar = 50; foobar; };
+        oneAndTwo() + threeAndFour();",
+            10,
+        ),
+        (
+            "let firstFoobar = fn() { let foobar = 50; foobar; };
         let secondFoobar = fn() { let foobar = 100; foobar; };
-        firstFoobar() + secondFoobar();", 150),
-        ("let globalSeed = 50;
+        firstFoobar() + secondFoobar();",
+            150,
+        ),
+        (
+            "let globalSeed = 50;
         let minusOne = fn() {
         let num = 1;
         globalSeed - num;
@@ -240,7 +283,9 @@ fn calling_functions_with_bindings_test() {
         let num = 2;
         globalSeed - num;
         };
-        minusOne() + minusTwo();", 97), 
+        minusOne() + minusTwo();",
+            97,
+        ),
     ];
     for (test_input, expected) in tests {
         match run(test_input) {

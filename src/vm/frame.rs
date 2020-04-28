@@ -8,7 +8,7 @@ pub struct Frame {
 
 impl Frame {
     pub fn new(func: CompiledFunction, base_pointer: usize) -> Self {
-        Frame { 
+        Frame {
             func,
             ip: 0,
             bp: base_pointer,

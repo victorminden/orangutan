@@ -1,13 +1,13 @@
 //!  ParseError
-//! 
+//!
 //! `parse_error` contains an enum type for representing errors encountered during parsing.
-use std::fmt;
 use crate::token::Token;
+use std::fmt;
 
 ///  Represents any errors encountered during parsing of Monkey tokens.
 ///
 /// Most errors are specific and explain exactly which token was expected instead of the found token.
-/// However, in some cases we fall back to generic errors to make implementation less cumbersome. 
+/// However, in some cases we fall back to generic errors to make implementation less cumbersome.
 #[derive(Debug, Clone)]
 pub enum ParseError {
     UnexpectedToken(Token),
@@ -39,7 +39,9 @@ impl fmt::Display for ParseError {
             ParseError::ExpectedPrefix(token) => expected_x_got_y(f, "prefix", token),
             ParseError::ExpectedRParen(token) => expected_x_got_y(f, "(", token),
             ParseError::ExpectedSemicolon(token) => expected_x_got_y(f, ";", token),
-            ParseError::UnexpectedToken(token) => write!(f, "ParseError: UnexpectedToken `{}`!", token),
+            ParseError::UnexpectedToken(token) => {
+                write!(f, "ParseError: UnexpectedToken `{}`!", token)
+            }
             ParseError::UnknownError => write!(f, "ParseError: UnknownError!"),
         }
     }
