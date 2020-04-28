@@ -15,6 +15,7 @@ pub type Constant = Object;
 pub struct CompiledFunction {
     pub instructions: Instructions,
     pub num_locals: usize,
+    pub num_parameters: usize,
 }
 
 impl fmt::Display for CompiledFunction {

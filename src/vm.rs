@@ -75,6 +75,7 @@ impl Vm {
         let main_function = CompiledFunction {
             instructions: bytecode.instructions.clone(),
             num_locals: 0,
+            num_parameters: 0,
         };
         let null_ref = Rc::new(Object::Null);
         let mut frames = Vec::with_capacity(MAX_FRAMES);

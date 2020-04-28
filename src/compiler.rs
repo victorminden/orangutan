@@ -144,8 +144,11 @@ impl Compiler {
                 }
                 self.emit(OpCode::Call.make_u8(args.len() as u8));
             }
-            Expression::FunctionLiteral(_, block_statement) => {
+            Expression::FunctionLiteral(parameters, block_statement) => {
                 self.enter_scope();
+                for parameter in parameters {
+                    self.symbol_table.borrow_mut().define(parameter);
+                }
                 self.compile_block_statement(block_statement)?;
                 self.replace_last_pop_with_return();
                 if !self.last_instruction_is(OpCode::ReturnValue) {
@@ -156,6 +159,7 @@ impl Compiler {
                 let compiled_function = CompiledFunction {
                     instructions,
                     num_locals,
+                    num_parameters: parameters.len(),
                 };
                 let idx = self.add_constant(Constant::CompiledFunction(compiled_function));
                 self.emit(OpCode::Constant.make_u16(idx));
