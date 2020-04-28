@@ -22,6 +22,7 @@ pub enum VmError {
     StackUnderflow,
     UnsupportedOperands,
     CallingNonFunction,
+    WrongNumberOfArgs,
 }
 
 pub struct Vm {
@@ -80,6 +81,10 @@ impl Vm {
         let null_ref = Rc::new(Object::Null);
         let mut frames = Vec::with_capacity(MAX_FRAMES);
         frames.push(Frame::new(main_function, 0));
+        let deficit = GLOBALS_SIZE - store.borrow().len();
+        store
+            .borrow_mut()
+            .append(&mut vec![null_ref.clone(); deficit]);
         Vm {
             constants: ref_counted_constants,
             globals: store,
@@ -99,6 +104,22 @@ impl Vm {
 
     fn set_ip(&mut self, val: usize) {
         self.current_frame().ip = val;
+    }
+
+    fn call_function(&mut self, num_args: usize) -> Result<(), VmError> {
+        let func = (*self.stack[self.sp - 1 - num_args]).clone();
+        match func {
+            Object::CompiledFunction(func) => {
+                if func.num_parameters != num_args {
+                    return Err(VmError::WrongNumberOfArgs);
+                }
+                let num_locals = func.num_locals;
+                self.push_frame(Frame::new(func, self.sp - num_args));
+                self.sp += num_locals;
+                Ok(())
+            }
+            _ => Err(VmError::CallingNonFunction),
+        }
     }
 
     pub fn run(&mut self) -> Result<Object, VmError> {
@@ -122,17 +143,10 @@ impl Vm {
                     self.push(return_value)?;
                 }
                 OpCode::Call => {
+                    let num_args = ins[ip + 1];
                     self.increment_ip(1);
-                    let func = (*self.stack[self.sp - 1]).clone();
-                    match func {
-                        Object::CompiledFunction(func) => {
-                            let num_locals = func.num_locals;
-                            self.push_frame(Frame::new(func, self.sp));
-                            self.sp += num_locals;
-                            continue;
-                        }
-                        _ => return Err(VmError::CallingNonFunction),
-                    }
+                    self.call_function(num_args as usize)?;
+                    continue;
                 }
                 OpCode::Index => {
                     let index = self.pop()?;

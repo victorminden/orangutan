@@ -294,3 +294,25 @@ fn calling_functions_with_bindings_test() {
         }
     }
 }
+
+#[test]
+fn calling_functions_with_arguments_and_bindings_test() {
+    let tests = vec![
+        (
+            "let identity = fn(a) { a; };
+        identity(4);",
+            4,
+        ),
+        (
+            "let sum = fn(a, b) { a + b; };
+            sum(1, 2);",
+            3,
+        ),
+    ];
+    for (test_input, expected) in tests {
+        match run(test_input) {
+            Ok(obj) => assert_eq!(obj.to_string(), expected.to_string()),
+            Err(error) => panic!("VM error! {:?}", error),
+        }
+    }
+}
