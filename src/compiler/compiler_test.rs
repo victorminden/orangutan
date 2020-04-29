@@ -500,7 +500,7 @@ fn function_test() {
                     0,
                 ),
             ],
-            expected_instructions: vec![OpCode::Constant.make_u16(2), OpCode::Pop.make()],
+            expected_instructions: vec![OpCode::Closure.make_u16_u8(2, 0), OpCode::Pop.make()],
         },
         TestCase {
             input: "fn() { 5 + 10; }",
@@ -518,7 +518,7 @@ fn function_test() {
                     0,
                 ),
             ],
-            expected_instructions: vec![OpCode::Constant.make_u16(2), OpCode::Pop.make()],
+            expected_instructions: vec![OpCode::Closure.make_u16_u8(2, 0), OpCode::Pop.make()],
         },
         TestCase {
             input: "fn() { 1; 2 }",
@@ -536,12 +536,12 @@ fn function_test() {
                     0,
                 ),
             ],
-            expected_instructions: vec![OpCode::Constant.make_u16(2), OpCode::Pop.make()],
+            expected_instructions: vec![OpCode::Closure.make_u16_u8(2, 0), OpCode::Pop.make()],
         },
         TestCase {
             input: "fn() {}",
             expected_constants: vec![compiled_function(vec![OpCode::Return.make()], 0, 0)],
-            expected_instructions: vec![OpCode::Constant.make_u16(0), OpCode::Pop.make()],
+            expected_instructions: vec![OpCode::Closure.make_u16_u8(0, 0), OpCode::Pop.make()],
         },
     ];
     for test in tests {
@@ -563,7 +563,7 @@ fn function_call_test() {
                 ),
             ],
             expected_instructions: vec![
-                OpCode::Constant.make_u16(1),
+                OpCode::Closure.make_u16_u8(1, 0),
                 OpCode::Call.make_u8(0),
                 OpCode::Pop.make(),
             ],
@@ -580,7 +580,7 @@ fn function_call_test() {
                 ),
             ],
             expected_instructions: vec![
-                OpCode::Constant.make_u16(1),
+                OpCode::Closure.make_u16_u8(1, 0),
                 OpCode::SetGlobal.make_u16(0),
                 OpCode::GetGlobal.make_u16(0),
                 OpCode::Call.make_u8(0),
@@ -599,7 +599,7 @@ fn function_call_test() {
                 Constant::Integer(24),
             ],
             expected_instructions: vec![
-                OpCode::Constant.make_u16(0),
+                OpCode::Closure.make_u16_u8(0, 0),
                 OpCode::SetGlobal.make_u16(0),
                 OpCode::GetGlobal.make_u16(0),
                 OpCode::Constant.make_u16(1),
@@ -628,7 +628,7 @@ fn function_call_test() {
                 Constant::Integer(26),
             ],
             expected_instructions: vec![
-                OpCode::Constant.make_u16(0),
+                OpCode::Closure.make_u16_u8(0, 0),
                 OpCode::SetGlobal.make_u16(0),
                 OpCode::GetGlobal.make_u16(0),
                 OpCode::Constant.make_u16(1),
@@ -660,7 +660,7 @@ fn let_statement_scopes_test() {
             expected_instructions: vec![
                 OpCode::Constant.make_u16(0),
                 OpCode::SetGlobal.make_u16(0),
-                OpCode::Constant.make_u16(1),
+                OpCode::Closure.make_u16_u8(1, 0),
                 OpCode::Pop.make(),
             ],
         },
@@ -679,7 +679,7 @@ fn let_statement_scopes_test() {
                     0,
                 ),
             ],
-            expected_instructions: vec![OpCode::Constant.make_u16(1), OpCode::Pop.make()],
+            expected_instructions: vec![OpCode::Closure.make_u16_u8(1, 0), OpCode::Pop.make()],
         },
         TestCase {
             input: "fn() {
@@ -705,7 +705,7 @@ fn let_statement_scopes_test() {
                     0,
                 ),
             ],
-            expected_instructions: vec![OpCode::Constant.make_u16(2), OpCode::Pop.make()],
+            expected_instructions: vec![OpCode::Closure.make_u16_u8(2, 0), OpCode::Pop.make()],
         },
         TestCase {
             input: " let a = 55;
@@ -732,7 +732,7 @@ fn let_statement_scopes_test() {
             expected_instructions: vec![
                 OpCode::Constant.make_u16(0),
                 OpCode::SetGlobal.make_u16(0),
-                OpCode::Constant.make_u16(2),
+                OpCode::Closure.make_u16_u8(2, 0),
                 OpCode::Pop.make(),
             ],
         },
@@ -772,7 +772,7 @@ fn builtin_test() {
                 0,
                 0,
             )],
-            expected_instructions: vec![OpCode::Constant.make_u16(0), OpCode::Pop.make()],
+            expected_instructions: vec![OpCode::Closure.make_u16_u8(0, 0), OpCode::Pop.make()],
         },
     ];
     for test in tests {

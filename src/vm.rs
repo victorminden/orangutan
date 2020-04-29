@@ -2,7 +2,9 @@ mod frame;
 #[cfg(test)]
 mod vm_test;
 
-use crate::code::{read_uint16, Bytecode, CompiledFunction, Constant, Instructions, OpCode};
+use crate::code::{
+    read_uint16, Bytecode, Closure, CompiledFunction, Constant, Instructions, OpCode,
+};
 use crate::object::{BuiltIn, Object};
 use crate::vm::frame::Frame;
 use std::cell::RefCell;
@@ -78,9 +80,13 @@ impl Vm {
             num_locals: 0,
             num_parameters: 0,
         };
+        let main_closure = Closure {
+            compiled_function: main_function,
+            free: vec![],
+        };
         let null_ref = Rc::new(Object::Null);
         let mut frames = Vec::with_capacity(MAX_FRAMES);
-        frames.push(Frame::new(main_function, 0));
+        frames.push(Frame::new(main_closure, 0));
         let deficit = GLOBALS_SIZE - store.borrow().len();
         store
             .borrow_mut()
@@ -106,18 +112,25 @@ impl Vm {
         self.current_frame().ip = val;
     }
 
+    fn call_closure(&mut self, num_args: usize, closure: Closure) -> Result<(), VmError> {
+        let func = closure.compiled_function;
+        if func.num_parameters != num_args {
+            return Err(VmError::WrongNumberOfArgs);
+        }
+        let num_locals = func.num_locals;
+        let closure = Closure {
+            compiled_function: func,
+            free: vec![],
+        };
+        self.push_frame(Frame::new(closure, self.sp - num_args));
+        self.sp += num_locals;
+        Ok(())
+    }
+
     fn call_function(&mut self, num_args: usize) -> Result<(), VmError> {
         let func = (*self.stack[self.sp - 1 - num_args]).clone();
         match func {
-            Object::CompiledFunction(func) => {
-                if func.num_parameters != num_args {
-                    return Err(VmError::WrongNumberOfArgs);
-                }
-                let num_locals = func.num_locals;
-                self.push_frame(Frame::new(func, self.sp - num_args));
-                self.sp += num_locals;
-                Ok(())
-            }
+            Object::Closure(cl) => self.call_closure(num_args, cl),
             Object::BuiltIn(func) => {
                 let mut args = vec![];
                 for _ in 0..num_args {
@@ -148,6 +161,21 @@ impl Vm {
                 _ => return Err(VmError::BadOpCode),
             };
             match op {
+                OpCode::Closure => {
+                    let idx = read_uint16(ins[ip + 1], ins[ip + 2]);
+                    let _ = ins[ip + 3];
+                    self.increment_ip(3);
+
+                    match (*self.constants[idx as usize]).clone() {
+                        Object::CompiledFunction(func) => {
+                            self.push(Rc::new(Object::Closure(Closure {
+                                compiled_function: func,
+                                free: vec![],
+                            })))?
+                        }
+                        _ => return Err(VmError::UnknownError),
+                    }
+                }
                 OpCode::GetBuiltin => {
                     // TODO: Clean this up.
                     let idx = ins[ip + 1];

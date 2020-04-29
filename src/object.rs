@@ -8,7 +8,7 @@ mod environment;
 pub use self::built_in_functions::*;
 pub use self::environment::*;
 use crate::ast::BlockStatement;
-use crate::code::CompiledFunction;
+use crate::code::{Closure, CompiledFunction};
 use crate::evaluator::EvalError;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -50,6 +50,7 @@ pub enum Object {
     Array(Vec<Object>),
     Hash(HashMap<HashableObject, Object>),
     CompiledFunction(CompiledFunction),
+    Closure(Closure),
 }
 
 impl fmt::Display for Object {
@@ -81,7 +82,8 @@ impl fmt::Display for Object {
                 formatted_elements.sort();
                 write!(f, "{{{}}}", formatted_elements.join(", "))
             }
-            Object::CompiledFunction(func) => write!(f, "{}", func),
+            Object::CompiledFunction(func) => write!(f, "Compiled function {}", func),
+            Object::Closure(cl) => write!(f, "Closure {:?}", cl),
         }
     }
 }

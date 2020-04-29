@@ -5,11 +5,18 @@ use crate::object::Object;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use std::convert::TryFrom;
 use std::fmt;
+use std::rc::Rc;
 
 pub type Instructions = Vec<u8>;
 pub type ReadOnlyInstructions = [u8];
 // TODO: Determine a space-efficient way of representing constants.
 pub type Constant = Object;
+
+#[derive(Debug, Clone)]
+pub struct Closure {
+    pub compiled_function: CompiledFunction,
+    pub free: Vec<Rc<Object>>,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CompiledFunction {
@@ -73,11 +80,16 @@ pub enum OpCode {
     Index,
     ReturnValue,
     Return,
+    Closure,
 }
 
 impl OpCode {
     pub fn definition(&self) -> Definition {
         match self {
+            OpCode::Closure => Definition {
+                name: String::from("OpClosure"),
+                widths: vec![2, 1],
+            },
             OpCode::GetBuiltin => Definition {
                 name: String::from("OpGetBuiltin"),
                 widths: vec![1],
@@ -201,6 +213,11 @@ impl OpCode {
     pub fn make_u8(self, operand: u8) -> Instructions {
         vec![self.into(), operand]
     }
+
+    pub fn make_u16_u8(self, operand16: u16, operand8: u8) -> Instructions {
+        let b = u16::to_be_bytes(operand16);
+        vec![self.into(), b[0], b[1], operand8]
+    }
 }
 
 pub fn read_operands(def: &Definition, instructions: &ReadOnlyInstructions) -> (Vec<u16>, usize) {
@@ -320,9 +337,11 @@ mod tests {
             OpCode::Add.make(),
             OpCode::Constant.make_u16(2),
             OpCode::Constant.make_u16(65535),
+            OpCode::Closure.make_u16_u8(65535, 255),
         ]
         .concat();
-        let expected = "0000 OpAdd\n0001 OpConstant 2\n0004 OpConstant 65535";
+        let expected =
+            "0000 OpAdd\n0001 OpConstant 2\n0004 OpConstant 65535\n0007 OpClosure 65535 255";
         assert_eq!(disassemble(&instructions), expected);
     }
 }

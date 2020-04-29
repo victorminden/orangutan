@@ -171,7 +171,7 @@ impl Compiler {
                     num_parameters: parameters.len(),
                 };
                 let idx = self.add_constant(Constant::CompiledFunction(compiled_function));
-                self.emit(OpCode::Constant.make_u16(idx));
+                self.emit(OpCode::Closure.make_u16_u8(idx, 0));
             }
             Expression::Ident(name) => {
                 // Use a separate statement to catch the result so that we can unborrow the symbol_table.
