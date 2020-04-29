@@ -316,3 +316,18 @@ fn calling_functions_with_arguments_and_bindings_test() {
         }
     }
 }
+
+#[test]
+fn builtin_functions_test() {
+    let tests = vec![
+        ("len(\"\")", 0),
+        ("len(\"four\")", 4),
+        ("let array = [1,2,3]; first(rest(array))", 2),
+    ];
+    for (test_input, expected) in tests {
+        match run(test_input) {
+            Ok(obj) => assert_eq!(obj.to_string(), expected.to_string()),
+            Err(error) => panic!("VM error! {:?}", error),
+        }
+    }
+}

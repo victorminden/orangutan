@@ -3,9 +3,12 @@
 //! `built_in_functions` contains the implementation of functions built-in to the Monkey language.
 use crate::evaluator::EvalError;
 use crate::object::Object;
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 
 // TODO: Document.
 
+#[derive(IntoPrimitive, TryFromPrimitive, Debug, Eq, PartialEq, Clone)]
+#[repr(u8)]
 pub enum BuiltIn {
     Len,
     First,

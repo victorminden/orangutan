@@ -72,8 +72,9 @@ impl SymbolTable {
 
     pub fn new_with_builtins() -> Self {
         let mut sym_table = SymbolTable::new();
-        for (i, b) in BuiltIn::all().iter().enumerate() {
-            sym_table.define_builtin(&b.name(), i as u16);
+        for b in BuiltIn::all() {
+            let idx: u8 = b.clone().into();
+            sym_table.define_builtin(&b.name(), idx as u16);
         }
         sym_table
     }

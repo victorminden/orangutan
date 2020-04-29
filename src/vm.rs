@@ -3,7 +3,7 @@ mod frame;
 mod vm_test;
 
 use crate::code::{read_uint16, Bytecode, CompiledFunction, Constant, Instructions, OpCode};
-use crate::object::Object;
+use crate::object::{BuiltIn, Object};
 use crate::vm::frame::Frame;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -118,6 +118,23 @@ impl Vm {
                 self.sp += num_locals;
                 Ok(())
             }
+            Object::BuiltIn(func) => {
+                let mut args = vec![];
+                for _ in 0..num_args {
+                    args.push((*self.pop()?).clone());
+                }
+                args.reverse();
+                // Remove the function itself from the stack.
+                self.pop()?;
+                match func(args) {
+                    Ok(obj) => {
+                        self.push(Rc::new(obj))?;
+                        self.increment_ip(1);
+                        Ok(())
+                    }
+                    Err(_) => Err(VmError::UnknownError),
+                }
+            }
             _ => Err(VmError::CallingNonFunction),
         }
     }
@@ -131,6 +148,16 @@ impl Vm {
                 _ => return Err(VmError::BadOpCode),
             };
             match op {
+                OpCode::GetBuiltin => {
+                    // TODO: Clean this up.
+                    let idx = ins[ip + 1];
+                    self.increment_ip(1);
+                    let b = match BuiltIn::try_from(idx) {
+                        Ok(built_in) => built_in,
+                        Err(_) => return Err(VmError::UnknownError),
+                    };
+                    self.push(Rc::new(b.func()))?;
+                }
                 OpCode::Return => {
                     let frame = self.pop_frame()?;
                     self.sp = frame.bp - 1;
