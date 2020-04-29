@@ -67,6 +67,7 @@ pub enum OpCode {
     SetGlobal,
     GetLocal,
     SetLocal,
+    GetBuiltin,
     Array,
     Hash,
     Index,
@@ -77,6 +78,10 @@ pub enum OpCode {
 impl OpCode {
     pub fn definition(&self) -> Definition {
         match self {
+            OpCode::GetBuiltin => Definition {
+                name: String::from("OpGetBuiltin"),
+                widths: vec![1],
+            },
             OpCode::Return => Definition {
                 name: String::from("OpReturn"),
                 widths: vec![],

@@ -6,17 +6,63 @@ use crate::object::Object;
 
 // TODO: Document.
 
-pub fn get_built_in(name: &str) -> Option<&Object> {
-    match name {
-        "len" => Some(&Object::BuiltIn(len)),
-        "first" => Some(&Object::BuiltIn(first)),
-        "last" => Some(&Object::BuiltIn(last)),
-        "rest" => Some(&Object::BuiltIn(rest)),
-        "push" => Some(&Object::BuiltIn(push)),
-        "magic_number" => Some(&Object::BuiltIn(magic_number)),
-        "puts" => Some(&Object::BuiltIn(puts)),
-        _ => None,
+pub enum BuiltIn {
+    Len,
+    First,
+    Last,
+    Rest,
+    Push,
+    Puts,
+    MagicNumber,
+}
+
+impl BuiltIn {
+    pub fn all() -> Vec<BuiltIn> {
+        vec![
+            BuiltIn::Len,
+            BuiltIn::First,
+            BuiltIn::Last,
+            BuiltIn::Rest,
+            BuiltIn::Push,
+            BuiltIn::Puts,
+            BuiltIn::MagicNumber,
+        ]
     }
+
+    pub fn name(&self) -> String {
+        let raw = match self {
+            BuiltIn::Len => "len",
+            BuiltIn::First => "first",
+            BuiltIn::Last => "last",
+            BuiltIn::Rest => "rest",
+            BuiltIn::Push => "push",
+            BuiltIn::Puts => "puts",
+            BuiltIn::MagicNumber => "magic_number",
+        };
+        String::from(raw)
+    }
+
+    pub fn func(&self) -> Object {
+        let f = match self {
+            BuiltIn::Len => len,
+            BuiltIn::First => first,
+            BuiltIn::Last => last,
+            BuiltIn::Rest => rest,
+            BuiltIn::Push => push,
+            BuiltIn::Puts => puts,
+            BuiltIn::MagicNumber => magic_number,
+        };
+        Object::BuiltIn(f)
+    }
+}
+
+pub fn get_built_in(name: &str) -> Option<Object> {
+    for b in &BuiltIn::all() {
+        if name == b.name() {
+            return Some(b.func());
+        }
+    }
+    return None;
 }
 
 fn magic_number(_: Vec<Object>) -> Result<Object, EvalError> {

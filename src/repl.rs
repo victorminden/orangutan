@@ -79,7 +79,7 @@ fn start_with_interpreter() -> io::Result<()> {
 
 fn start_with_compiler() -> io::Result<()> {
     let constants: Rc<RefCell<Vec<Constant>>> = Rc::new(RefCell::new(vec![]));
-    let symbol_table = Rc::new(RefCell::new(compiler::SymbolTable::new()));
+    let symbol_table = Rc::new(RefCell::new(compiler::SymbolTable::new_with_builtins()));
     let globals: Rc<RefCell<Vec<Rc<Object>>>> = Rc::new(RefCell::new(vec![]));
 
     loop {

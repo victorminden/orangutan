@@ -742,6 +742,44 @@ fn let_statement_scopes_test() {
     }
 }
 
+#[test]
+fn builtin_test() {
+    let tests = vec![
+        TestCase {
+            input: "len([]); push([], 1);",
+            expected_constants: vec![Constant::Integer(1)],
+            expected_instructions: vec![
+                OpCode::GetBuiltin.make_u8(0),
+                OpCode::Array.make_u16(0),
+                OpCode::Call.make_u8(1),
+                OpCode::Pop.make(),
+                OpCode::GetBuiltin.make_u8(4),
+                OpCode::Array.make_u16(0),
+                OpCode::Constant.make_u16(0),
+                OpCode::Call.make_u8(2),
+                OpCode::Pop.make(),
+            ],
+        },
+        TestCase {
+            input: "fn() { len([]); };",
+            expected_constants: vec![compiled_function(
+                vec![
+                    OpCode::GetBuiltin.make_u8(0),
+                    OpCode::Array.make_u16(0),
+                    OpCode::Call.make_u8(1),
+                    OpCode::ReturnValue.make(),
+                ],
+                0,
+                0,
+            )],
+            expected_instructions: vec![OpCode::Constant.make_u16(0), OpCode::Pop.make()],
+        },
+    ];
+    for test in tests {
+        test_compile(test);
+    }
+}
+
 fn compiled_function(
     instructions: Vec<Instructions>,
     num_locals: usize,

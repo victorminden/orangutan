@@ -1,9 +1,11 @@
+use crate::object::BuiltIn;
 use std::collections::HashMap;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum SymbolScope {
     Global,
     Local,
+    BuiltIn,
 }
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct Symbol {
@@ -27,15 +29,22 @@ impl SymbolStore {
         Default::default()
     }
 
-    pub fn define_with_scope(&mut self, name: &String, scope: SymbolScope) -> &Symbol {
-        self.store.insert(
-            name.clone(),
-            Symbol {
-                scope,
-                index: self.num_definitions,
-            },
-        );
-        self.num_definitions += 1;
+    pub fn define_with_scope(
+        &mut self,
+        name: &String,
+        scope: SymbolScope,
+        index: Option<u16>,
+    ) -> &Symbol {
+        let idx = match index {
+            Some(idx) => idx,
+            None => {
+                self.num_definitions += 1;
+                self.num_definitions - 1
+            }
+        };
+
+        self.store
+            .insert(name.clone(), Symbol { scope, index: idx });
         &self.store[name]
     }
 
@@ -61,6 +70,18 @@ impl SymbolTable {
         }
     }
 
+    pub fn new_with_builtins() -> Self {
+        let mut sym_table = SymbolTable::new();
+        for (i, b) in BuiltIn::all().iter().enumerate() {
+            sym_table.define_builtin(&b.name(), i as u16);
+        }
+        sym_table
+    }
+
+    fn define_builtin(&mut self, name: &String, index: u16) -> &Symbol {
+        self.stores[0].define_with_scope(name, SymbolScope::BuiltIn, Some(index))
+    }
+
     pub fn num_definitions(&self) -> usize {
         self.stores[self.store_index - 1].num_definitions as usize
     }
@@ -81,7 +102,7 @@ impl SymbolTable {
         } else {
             SymbolScope::Global
         };
-        self.stores[self.store_index - 1].define_with_scope(name, scope)
+        self.stores[self.store_index - 1].define_with_scope(name, scope, None)
     }
 
     pub fn resolve(&self, name: &String) -> Result<Symbol, SymbolError> {

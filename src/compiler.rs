@@ -5,7 +5,7 @@ mod symbol_table;
 pub use self::symbol_table::*;
 use crate::ast::{BlockStatement, Expression, Program, Statement};
 use crate::code::{Bytecode, CompiledFunction, Constant, Instructions, OpCode};
-use crate::object::Object;
+use crate::object::{BuiltIn, Object};
 use crate::token::Token;
 
 use std::cell::RefCell;
@@ -52,7 +52,7 @@ pub enum CompileError {
 impl Compiler {
     pub fn new() -> Self {
         Compiler::new_with_state(
-            Rc::new(RefCell::new(SymbolTable::new())),
+            Rc::new(RefCell::new(SymbolTable::new_with_builtins())),
             Rc::new(RefCell::new(Vec::new())),
         )
     }
@@ -97,6 +97,14 @@ impl Compiler {
         }
     }
 
+    fn load_symbol(&mut self, symbol: &Symbol) -> Instructions {
+        match symbol.scope {
+            SymbolScope::Global => OpCode::GetGlobal.make_u16(symbol.index),
+            SymbolScope::Local => OpCode::GetLocal.make_u8(symbol.index as u8),
+            SymbolScope::BuiltIn => OpCode::GetBuiltin.make_u8(symbol.index as u8),
+        }
+    }
+
     pub fn compile(&mut self, p: &Program) -> Result<Bytecode, CompileError> {
         for statement in &p.statements {
             self.compile_statement(statement)?;
@@ -123,6 +131,7 @@ impl Compiler {
                 let insts = match symbol.scope {
                     SymbolScope::Global => OpCode::SetGlobal.make_u16(symbol.index),
                     SymbolScope::Local => OpCode::SetLocal.make_u8(symbol.index as u8),
+                    _ => return Err(CompileError::UnknownError),
                 };
                 self.emit(insts);
             }
@@ -169,10 +178,7 @@ impl Compiler {
                 let symbol_result = self.symbol_table.borrow().resolve(name);
                 match symbol_result {
                     Ok(symbol) => {
-                        let insts = match symbol.scope {
-                            SymbolScope::Global => OpCode::GetGlobal.make_u16(symbol.index),
-                            SymbolScope::Local => OpCode::GetLocal.make_u8(symbol.index as u8),
-                        };
+                        let insts = self.load_symbol(&symbol);
                         self.emit(insts);
                     }
                     Err(_) => return Err(CompileError::SymbolNotFound),
