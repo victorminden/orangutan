@@ -780,6 +780,42 @@ fn builtin_test() {
     }
 }
 
+#[test]
+fn closure_test() {
+    let tests = vec![TestCase {
+        input: "fn(a) {
+                fn(b) {
+                a + b
+                };
+                };",
+        expected_constants: vec![
+            compiled_function(
+                vec![
+                    OpCode::GetFree.make_u8(0),
+                    OpCode::GetLocal.make_u8(0),
+                    OpCode::Add.make(),
+                    OpCode::ReturnValue.make(),
+                ],
+                1,
+                1,
+            ),
+            compiled_function(
+                vec![
+                    OpCode::GetLocal.make_u8(0),
+                    OpCode::Closure.make_u16_u8(0, 1),
+                    OpCode::ReturnValue.make(),
+                ],
+                1,
+                1,
+            ),
+        ],
+        expected_instructions: vec![OpCode::Closure.make_u16_u8(1, 0), OpCode::Pop.make()],
+    }];
+    for test in tests {
+        test_compile(test);
+    }
+}
+
 fn compiled_function(
     instructions: Vec<Instructions>,
     num_locals: usize,
