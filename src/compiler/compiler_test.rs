@@ -56,13 +56,19 @@ fn test_constants(want: Vec<Constant>, got: Vec<Constant>) {
     for (w, g) in want.iter().zip(got.iter()) {
         match (w, g) {
             (Constant::Integer(want), Constant::Integer(got)) => {
-                assert_eq!(want, got);
+                assert_eq!(want, got, "Bad integer constant!");
             }
             (Constant::Str(want), Constant::Str(got)) => {
-                assert_eq!(want, got);
+                assert_eq!(want, got, "Bad string constant!");
             }
             (Constant::CompiledFunction(want), Constant::CompiledFunction(got)) => {
-                assert_eq!(want, got);
+                assert_eq!(
+                    want,
+                    got,
+                    "\n\nwanted: \n{}\n\n got: \n{}\n",
+                    disassemble(&want.instructions[..]),
+                    disassemble(&got.instructions[..]),
+                );
             }
             _ => panic!(
                 "Unexpected constants! \n\nwant: \n{:?}, \n\ngot: \n{:?}",

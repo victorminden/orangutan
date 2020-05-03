@@ -102,7 +102,7 @@ impl Compiler {
             SymbolScope::Global => OpCode::GetGlobal.make_u16(symbol.index),
             SymbolScope::Local => OpCode::GetLocal.make_u8(symbol.index as u8),
             SymbolScope::BuiltIn => OpCode::GetBuiltin.make_u8(symbol.index as u8),
-            SymbolScope::Free => panic!(),
+            SymbolScope::Free => OpCode::GetFree.make_u8(symbol.index as u8),
         }
     }
 
