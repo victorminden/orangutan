@@ -39,8 +39,8 @@ pub struct Bytecode {
 impl Bytecode {
     pub fn new(instructions: Instructions, constants: Vec<Constant>) -> Self {
         Bytecode {
-            instructions: instructions,
-            constants: constants,
+            instructions,
+            constants,
         }
     }
 }
@@ -82,11 +82,16 @@ pub enum OpCode {
     ReturnValue,
     Return,
     Closure,
+    CurrentClosure,
 }
 
 impl OpCode {
     pub fn definition(&self) -> Definition {
         match self {
+            OpCode::CurrentClosure => Definition {
+                name: String::from("OpCurrentClosure"),
+                widths: vec![],
+            },
             OpCode::GetFree => Definition {
                 name: String::from("OpGetFree"),
                 widths: vec![1],

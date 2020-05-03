@@ -127,8 +127,8 @@ impl Compiler {
                 self.emit(OpCode::Pop.make());
             }
             Statement::Let(name, expr) => {
-                self.compile_expression(expr)?;
                 let symbol = *self.symbol_table.borrow_mut().define(name);
+                self.compile_expression(expr)?;
                 let insts = match symbol.scope {
                     SymbolScope::Global => OpCode::SetGlobal.make_u16(symbol.index),
                     SymbolScope::Local => OpCode::SetLocal.make_u8(symbol.index as u8),

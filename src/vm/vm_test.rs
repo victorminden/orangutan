@@ -403,3 +403,54 @@ fn closures_test() {
         }
     }
 }
+
+#[test]
+fn recursive_functions_test() {
+    let tests = vec![
+        (
+            "let countDown = fn(x) {
+            if (x == 0) {
+            return 0;
+            } else {
+            countDown(x - 1);
+            }
+            };
+            countDown(1);",
+            0,
+        ),
+        (
+            "let countDown = fn(x) {
+        if (x == 0) {
+        return 0;
+        } else {
+        countDown(x - 1);
+        }
+        };
+        let wrapper = fn() {
+        countDown(1);
+        };
+        wrapper();",
+            0,
+        ),
+        (
+            "let wrapper = fn() {
+            let countDown = fn(x) {
+            if (x == 0) {
+            return 0;
+            } else {
+            countDown(x - 1);
+            }
+            };
+            countDown(1);
+            };
+            wrapper();",
+            0,
+        ),
+    ];
+    for (test_input, expected) in tests {
+        match run(test_input) {
+            Ok(obj) => assert_eq!(obj.to_string(), expected.to_string()),
+            Err(error) => panic!("VM error! {:?}", error),
+        }
+    }
+}

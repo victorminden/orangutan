@@ -888,6 +888,41 @@ fn closure_test() {
     }
 }
 
+#[test]
+fn recursive_test() {
+    let tests = vec![TestCase {
+        input: "let countDown = fn(x) { countDown(x - 1); };
+            countDown(1);",
+        expected_constants: vec![
+            Constant::Integer(1),
+            compiled_function(
+                vec![
+                    OpCode::CurrentClosure.make(),
+                    OpCode::GetLocal.make_u8(0),
+                    OpCode::Constant.make_u16(0),
+                    OpCode::Sub.make(),
+                    OpCode::Call.make_u16(1),
+                    OpCode::ReturnValue.make(),
+                ],
+                1,
+                1,
+            ),
+            Constant::Integer(1),
+        ],
+        expected_instructions: vec![
+            OpCode::Closure.make_u16_u8(1, 0),
+            OpCode::SetGlobal.make_u16(0),
+            OpCode::GetGlobal.make_u16(0),
+            OpCode::Constant.make_u16(2),
+            OpCode::Call.make_u16(1),
+            OpCode::Pop.make(),
+        ],
+    }];
+    for test in tests {
+        test_compile(test);
+    }
+}
+
 fn compiled_function(
     instructions: Vec<Instructions>,
     num_locals: usize,

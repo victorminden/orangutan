@@ -171,6 +171,7 @@ impl Vm {
                 _ => return Err(VmError::BadOpCode),
             };
             match op {
+                OpCode::CurrentClosure => {}
                 OpCode::GetFree => {
                     let free_idx = ins[ip + 1];
                     self.increment_ip(1);
