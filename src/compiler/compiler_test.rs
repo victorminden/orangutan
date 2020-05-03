@@ -24,8 +24,8 @@ fn test_compile(test_case: TestCase) {
         Err(_) => panic!("Compilation error!"),
     };
 
-    test_instructions(test_case.expected_instructions, bytecode.instructions);
     test_constants(test_case.expected_constants, bytecode.constants);
+    test_instructions(test_case.expected_instructions, bytecode.instructions);
 }
 
 fn test_instructions(want: Vec<Instructions>, got: Instructions) {
@@ -788,35 +788,101 @@ fn builtin_test() {
 
 #[test]
 fn closure_test() {
-    let tests = vec![TestCase {
-        input: "fn(a) {
+    let tests = vec![
+        TestCase {
+            input: "fn(a) {
                 fn(b) {
                 a + b
                 };
                 };",
-        expected_constants: vec![
-            compiled_function(
-                vec![
-                    OpCode::GetFree.make_u8(0),
-                    OpCode::GetLocal.make_u8(0),
-                    OpCode::Add.make(),
-                    OpCode::ReturnValue.make(),
-                ],
-                1,
-                1,
-            ),
-            compiled_function(
-                vec![
-                    OpCode::GetLocal.make_u8(0),
-                    OpCode::Closure.make_u16_u8(0, 1),
-                    OpCode::ReturnValue.make(),
-                ],
-                1,
-                1,
-            ),
-        ],
-        expected_instructions: vec![OpCode::Closure.make_u16_u8(1, 0), OpCode::Pop.make()],
-    }];
+            expected_constants: vec![
+                compiled_function(
+                    vec![
+                        OpCode::GetFree.make_u8(0),
+                        OpCode::GetLocal.make_u8(0),
+                        OpCode::Add.make(),
+                        OpCode::ReturnValue.make(),
+                    ],
+                    1,
+                    1,
+                ),
+                compiled_function(
+                    vec![
+                        OpCode::GetLocal.make_u8(0),
+                        OpCode::Closure.make_u16_u8(0, 1),
+                        OpCode::ReturnValue.make(),
+                    ],
+                    1,
+                    1,
+                ),
+            ],
+            expected_instructions: vec![OpCode::Closure.make_u16_u8(1, 0), OpCode::Pop.make()],
+        },
+        TestCase {
+            input: "let global = 55;
+                fn() {
+                    let a = 66;
+                    fn() {
+                        let b = 77;
+                        fn() {
+                            let c = 88;
+                            global + a + b + c;
+                        }
+                    }
+                }",
+            expected_constants: vec![
+                Constant::Integer(55),
+                Constant::Integer(66),
+                Constant::Integer(77),
+                Constant::Integer(88),
+                compiled_function(
+                    vec![
+                        OpCode::Constant.make_u16(3),
+                        OpCode::SetLocal.make_u8(0),
+                        OpCode::GetGlobal.make_u16(0),
+                        OpCode::GetFree.make_u8(0),
+                        OpCode::Add.make(),
+                        OpCode::GetFree.make_u8(1),
+                        OpCode::Add.make(),
+                        OpCode::GetLocal.make_u8(0),
+                        OpCode::Add.make(),
+                        OpCode::ReturnValue.make(),
+                    ],
+                    1,
+                    0,
+                ),
+                compiled_function(
+                    vec![
+                        OpCode::Constant.make_u16(2),
+                        OpCode::SetLocal.make_u8(0),
+                        OpCode::GetFree.make_u8(0),
+                        OpCode::GetLocal.make_u8(0),
+                        OpCode::Closure.make_u16_u8(4, 2),
+                        OpCode::ReturnValue.make(),
+                    ],
+                    1,
+                    0,
+                ),
+                compiled_function(
+                    vec![
+                        OpCode::Constant.make_u16(1),
+                        OpCode::SetLocal.make_u8(0),
+                        OpCode::GetLocal.make_u8(0),
+                        OpCode::Closure.make_u16_u8(5, 1),
+                        OpCode::ReturnValue.make(),
+                    ],
+                    1,
+                    0,
+                ),
+            ],
+            expected_instructions: vec![
+                OpCode::Constant.make_u16(0),
+                OpCode::SetGlobal.make_u16(0),
+                OpCode::Closure.make_u16_u8(6, 0),
+                OpCode::Pop.make(),
+            ],
+        },
+    ];
     for test in tests {
         test_compile(test);
     }

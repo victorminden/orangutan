@@ -99,6 +99,10 @@ impl SymbolTable {
         self.stores[self.store_index - 1].num_definitions as usize
     }
 
+    pub fn free_symbols(&self) -> &Vec<Symbol> {
+        &self.stores[self.store_index - 1].free_symbols
+    }
+
     pub fn enter_scope(&mut self) {
         self.stores.push(SymbolStore::new());
         self.store_index += 1;
@@ -128,9 +132,15 @@ impl SymbolTable {
                 {
                     return Ok(sym);
                 }
-                // Define the symbol as free in the current scope.
-                // TODO: May need to do this for all scopes between current scope and found scope.
-                return Ok(self.stores[index as usize].define_free(name, &sym).clone());
+                // Define the symbol as free for all scopes between current scope and found scope.
+                let mut free = sym;
+                for i in index + 1..current_index {
+                    let store = &mut self.stores[i as usize];
+                    free = *store.define_free(name, &free);
+                }
+                return Ok(self.stores[current_index as usize]
+                    .define_free(name, &free)
+                    .clone());
             }
             Err(error) => Err(error),
         }

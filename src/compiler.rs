@@ -97,7 +97,7 @@ impl Compiler {
         }
     }
 
-    fn load_symbol(&mut self, symbol: &Symbol) -> Instructions {
+    fn load_symbol(&self, symbol: &Symbol) -> Instructions {
         match symbol.scope {
             SymbolScope::Global => OpCode::GetGlobal.make_u16(symbol.index),
             SymbolScope::Local => OpCode::GetLocal.make_u8(symbol.index as u8),
@@ -164,15 +164,19 @@ impl Compiler {
                 if !self.last_instruction_is(OpCode::ReturnValue) {
                     self.emit(OpCode::Return.make());
                 }
+                let free_symbols = self.symbol_table.borrow().free_symbols().clone();
                 let num_locals = self.symbol_table.borrow().num_definitions();
                 let instructions = self.leave_scope()?;
+                for symbol in &free_symbols {
+                    self.emit(self.load_symbol(symbol));
+                }
                 let compiled_function = CompiledFunction {
                     instructions,
                     num_locals,
                     num_parameters: parameters.len(),
                 };
                 let idx = self.add_constant(Constant::CompiledFunction(compiled_function));
-                self.emit(OpCode::Closure.make_u16_u8(idx, 0));
+                self.emit(OpCode::Closure.make_u16_u8(idx, free_symbols.len() as u8));
             }
             Expression::Ident(name) => {
                 // Use a separate statement to catch the result so that we can unborrow the symbol_table.
