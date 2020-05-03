@@ -9,6 +9,7 @@ use std::fmt;
 ///
 /// In most cases the error is specific and self-explanatory.
 /// However, in some cases we fallback to a generic error to make implementation less cumbersome.
+#[derive(Debug)]
 pub enum EvalError {
     UnknownError,
     UnknownPrefixOperator(Token),

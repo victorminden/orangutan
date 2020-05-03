@@ -6,6 +6,7 @@ pub enum SymbolScope {
     Global,
     Local,
     BuiltIn,
+    Free,
 }
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct Symbol {
@@ -22,11 +23,22 @@ pub enum SymbolError {
 struct SymbolStore {
     store: HashMap<String, Symbol>,
     pub num_definitions: u16,
+    pub free_symbols: Vec<Symbol>,
 }
 
 impl SymbolStore {
     pub fn new() -> Self {
         Default::default()
+    }
+
+    pub fn define_free(&mut self, name: &String, original: &Symbol) -> &Symbol {
+        self.free_symbols.push(original.clone());
+        let symbol = Symbol {
+            scope: SymbolScope::Free,
+            index: (self.free_symbols.len() - 1) as u16,
+        };
+        self.store.insert(name.clone(), symbol);
+        self.store.get(name).unwrap()
     }
 
     pub fn define_with_scope(
@@ -106,11 +118,26 @@ impl SymbolTable {
         self.stores[self.store_index - 1].define_with_scope(name, scope, None)
     }
 
-    pub fn resolve(&self, name: &String) -> Result<Symbol, SymbolError> {
-        self.resolve_with_index(name, self.store_index - 1)
+    pub fn resolve(&mut self, name: &String) -> Result<Symbol, SymbolError> {
+        let current_index = self.store_index - 1;
+        match self.resolve_with_index(name, current_index) {
+            Ok((sym, index)) => {
+                if index == current_index || sym.scope != SymbolScope::Local {
+                    return Ok(sym);
+                }
+                // Define the symbol as free in the current scope.
+                // TODO: May need to do this for all scopes between current scope and found scope.
+                return Ok(self.stores[index as usize].define_free(name, &sym).clone());
+            }
+            Err(error) => Err(error),
+        }
     }
 
-    fn resolve_with_index(&self, name: &String, index: usize) -> Result<Symbol, SymbolError> {
+    fn resolve_with_index(
+        &self,
+        name: &String,
+        index: usize,
+    ) -> Result<(Symbol, usize), SymbolError> {
         match self.stores[index].resolve(name) {
             Err(error) => {
                 if index > 0 {
@@ -120,7 +147,7 @@ impl SymbolTable {
                     Err(error)
                 }
             }
-            good_result => good_result,
+            Ok(good_result) => Ok((good_result, index)),
         }
     }
 }
@@ -167,5 +194,105 @@ mod tests {
         global.define(&String::from("b"));
         let b_hat = global.resolve(&String::from("b")).unwrap();
         assert_eq!(expected[1], b_hat);
+    }
+
+    #[test]
+    fn resolve_free_test() {
+        let mut tbl = SymbolTable::new();
+        tbl.define(&String::from("a"));
+        tbl.define(&String::from("b"));
+        tbl.enter_scope();
+        tbl.define(&String::from("c"));
+        tbl.define(&String::from("d"));
+
+        let mut test = tbl.resolve(&String::from("a")).unwrap();
+        assert_eq!(
+            test,
+            Symbol {
+                scope: SymbolScope::Global,
+                index: 0,
+            }
+        );
+        test = tbl.resolve(&String::from("b")).unwrap();
+        assert_eq!(
+            test,
+            Symbol {
+                scope: SymbolScope::Global,
+                index: 1,
+            }
+        );
+
+        test = tbl.resolve(&String::from("c")).unwrap();
+        assert_eq!(
+            test,
+            Symbol {
+                scope: SymbolScope::Local,
+                index: 0,
+            }
+        );
+
+        test = tbl.resolve(&String::from("d")).unwrap();
+        assert_eq!(
+            test,
+            Symbol {
+                scope: SymbolScope::Local,
+                index: 1,
+            }
+        );
+
+        tbl.enter_scope();
+        tbl.define(&String::from("e"));
+        tbl.define(&String::from("f"));
+
+        test = tbl.resolve(&String::from("a")).unwrap();
+        assert_eq!(
+            test,
+            Symbol {
+                scope: SymbolScope::Global,
+                index: 0,
+            }
+        );
+        test = tbl.resolve(&String::from("b")).unwrap();
+        assert_eq!(
+            test,
+            Symbol {
+                scope: SymbolScope::Global,
+                index: 1,
+            }
+        );
+        test = tbl.resolve(&String::from("c")).unwrap();
+        assert_eq!(
+            test,
+            Symbol {
+                scope: SymbolScope::Free,
+                index: 0,
+            }
+        );
+        test = tbl.resolve(&String::from("d")).unwrap();
+        assert_eq!(
+            test,
+            Symbol {
+                scope: SymbolScope::Free,
+                index: 1,
+            }
+        );
+        test = tbl.resolve(&String::from("e")).unwrap();
+        assert_eq!(
+            test,
+            Symbol {
+                scope: SymbolScope::Local,
+                index: 0,
+            }
+        );
+        test = tbl.resolve(&String::from("f")).unwrap();
+        assert_eq!(
+            test,
+            Symbol {
+                scope: SymbolScope::Local,
+                index: 1,
+            }
+        );
+        let out = tbl.resolve(&String::from("does_not_exist"));
+        assert!(out.is_err());
     }
 }

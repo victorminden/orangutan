@@ -7,6 +7,7 @@
 extern crate num_enum;
 
 mod ast;
+pub mod benchmark;
 mod code;
 mod compiler;
 mod evaluator;

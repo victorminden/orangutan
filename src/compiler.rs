@@ -102,6 +102,7 @@ impl Compiler {
             SymbolScope::Global => OpCode::GetGlobal.make_u16(symbol.index),
             SymbolScope::Local => OpCode::GetLocal.make_u8(symbol.index as u8),
             SymbolScope::BuiltIn => OpCode::GetBuiltin.make_u8(symbol.index as u8),
+            SymbolScope::Free => panic!(),
         }
     }
 
@@ -175,7 +176,7 @@ impl Compiler {
             }
             Expression::Ident(name) => {
                 // Use a separate statement to catch the result so that we can unborrow the symbol_table.
-                let symbol_result = self.symbol_table.borrow().resolve(name);
+                let symbol_result = self.symbol_table.borrow_mut().resolve(name);
                 match symbol_result {
                     Ok(symbol) => {
                         let insts = self.load_symbol(&symbol);

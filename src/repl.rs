@@ -33,12 +33,11 @@ const MONKEY_FACE: &str = "            __,__
 /// Starts the REPL.
 ///
 /// Input is read line-by-line in interactive form until the user terminates the process.
-pub fn start() -> io::Result<()> {
+pub fn start(compile: bool) -> io::Result<()> {
     println!("Welcome to the Monkey programming language!");
     println!("{}", MONKEY_FACE);
     println!("Feel free to type in commands");
 
-    let compile = true;
     if compile {
         println!("(REPL is running in compiled mode)");
         start_with_compiler()?;
