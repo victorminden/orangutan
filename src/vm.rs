@@ -2,9 +2,7 @@ mod frame;
 #[cfg(test)]
 mod vm_test;
 
-use crate::code::{
-    read_uint16, Bytecode, Closure, CompiledFunction, Constant, Instructions, OpCode,
-};
+use crate::code::{read_uint16, Bytecode, Closure, CompiledFunction, Constant, OpCode};
 use crate::object::{BuiltIn, Object};
 use crate::vm::frame::Frame;
 use std::cell::RefCell;
@@ -317,7 +315,6 @@ impl Vm {
                         self.set_ip((jump_pos - 1) as usize);
                     }
                 }
-                _ => {}
             }
             self.increment_ip(1);
         }

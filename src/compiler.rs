@@ -5,7 +5,7 @@ mod symbol_table;
 pub use self::symbol_table::*;
 use crate::ast::{BlockStatement, Expression, Program, Statement};
 use crate::code::{Bytecode, CompiledFunction, Constant, Instructions, OpCode};
-use crate::object::{BuiltIn, Object};
+use crate::object::Object;
 use crate::token::Token;
 
 use std::cell::RefCell;
@@ -140,7 +140,6 @@ impl Compiler {
                 self.compile_expression(value)?;
                 self.emit(OpCode::ReturnValue.make());
             }
-            _ => return Err(CompileError::UnknownError),
         }
         Ok(())
     }
@@ -279,7 +278,6 @@ impl Compiler {
                 self.compile_expression(&right)?;
                 self.emit(OpCode::Index.make());
             }
-            _ => return Err(CompileError::UnknownError),
         }
         Ok(())
     }
