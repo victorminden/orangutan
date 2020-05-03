@@ -113,15 +113,10 @@ impl Vm {
     }
 
     fn call_closure(&mut self, num_args: usize, closure: Closure) -> Result<(), VmError> {
-        let func = closure.compiled_function;
-        if func.num_parameters != num_args {
+        if closure.compiled_function.num_parameters != num_args {
             return Err(VmError::WrongNumberOfArgs);
         }
-        let num_locals = func.num_locals;
-        let closure = Closure {
-            compiled_function: func,
-            free: vec![],
-        };
+        let num_locals = closure.compiled_function.num_locals;
         self.push_frame(Frame::new(closure, self.sp - num_args));
         self.sp += num_locals;
         Ok(())
@@ -152,6 +147,23 @@ impl Vm {
         }
     }
 
+    fn push_closure(&mut self, idx: u16, num_free: u8) -> Result<(), VmError> {
+        match (*self.constants[idx as usize]).clone() {
+            Object::CompiledFunction(func) => {
+                let mut free_vars = Vec::with_capacity(num_free as usize);
+                for _ in 0..num_free {
+                    free_vars.push(self.pop()?);
+                }
+                free_vars.reverse();
+                self.push(Rc::new(Object::Closure(Closure {
+                    compiled_function: func,
+                    free: free_vars,
+                })))
+            }
+            _ => return Err(VmError::UnknownError),
+        }
+    }
+
     pub fn run(&mut self) -> Result<Object, VmError> {
         while self.current_frame().ip < self.current_frame().instructions().len() {
             let ip = self.current_frame().ip;
@@ -161,20 +173,17 @@ impl Vm {
                 _ => return Err(VmError::BadOpCode),
             };
             match op {
+                OpCode::GetFree => {
+                    let free_idx = ins[ip + 1];
+                    self.increment_ip(1);
+                    let free = self.current_frame().cl.free[free_idx as usize].clone();
+                    self.push(free)?;
+                }
                 OpCode::Closure => {
                     let idx = read_uint16(ins[ip + 1], ins[ip + 2]);
-                    let _ = ins[ip + 3];
+                    let num_free = ins[ip + 3];
                     self.increment_ip(3);
-
-                    match (*self.constants[idx as usize]).clone() {
-                        Object::CompiledFunction(func) => {
-                            self.push(Rc::new(Object::Closure(Closure {
-                                compiled_function: func,
-                                free: vec![],
-                            })))?
-                        }
-                        _ => return Err(VmError::UnknownError),
-                    }
+                    self.push_closure(idx, num_free)?
                 }
                 OpCode::GetBuiltin => {
                     // TODO: Clean this up.
@@ -240,7 +249,6 @@ impl Vm {
                     let global_idx = read_uint16(ins[ip + 1], ins[ip + 2]);
                     self.increment_ip(2);
                     let element = self.pop()?;
-                    // TODO: Insert moves things to the right!  This is probably not what we want to do!
                     self.globals.borrow_mut()[global_idx as usize] = element;
                 }
                 OpCode::GetGlobal => {

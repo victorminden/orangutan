@@ -331,3 +331,40 @@ fn builtin_functions_test() {
         }
     }
 }
+
+#[test]
+fn closures_test() {
+    let tests = vec![
+        (
+            "let newClosure = fn(a) {
+            fn() { a; };
+            };
+            let closure = newClosure(99);
+            closure();",
+            99,
+        ),
+        (
+            "let newAdder = fn(a, b) {
+        fn(c) { a + b + c };
+        };
+        let adder = newAdder(1, 2);
+        adder(8);",
+            11,
+        ),
+        (
+            "let newAdder = fn(a, b) {
+            let c = a + b;
+            fn(d) { c + d };
+            };
+            let adder = newAdder(1, 2);
+            adder(8);",
+            11,
+        ),
+    ];
+    for (test_input, expected) in tests {
+        match run(test_input) {
+            Ok(obj) => assert_eq!(obj.to_string(), expected.to_string()),
+            Err(error) => panic!("VM error! {:?}", error),
+        }
+    }
+}
