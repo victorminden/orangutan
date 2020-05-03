@@ -122,7 +122,10 @@ impl SymbolTable {
         let current_index = self.store_index - 1;
         match self.resolve_with_index(name, current_index) {
             Ok((sym, index)) => {
-                if index == current_index || sym.scope != SymbolScope::Local {
+                if index == current_index
+                    || sym.scope == SymbolScope::Global
+                    || sym.scope == SymbolScope::BuiltIn
+                {
                     return Ok(sym);
                 }
                 // Define the symbol as free in the current scope.
