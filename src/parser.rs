@@ -101,7 +101,16 @@ impl<'a> Parser<'a> {
         let expr = self.parse_expression(Precedence::Lowest)?;
         // Advance past the required semicolon.
         self.expect_peek(Token::Semicolon)?;
-        return Ok(Statement::Let(name, expr));
+        match expr {
+            Expression::FunctionLiteral(parameters, body, _) => {
+                // Function literals should have a name.
+                return Ok(Statement::Let(
+                    name.clone(),
+                    Expression::FunctionLiteral(parameters, body, Some(name.clone())),
+                ));
+            }
+            _ => return Ok(Statement::Let(name, expr)),
+        }
     }
 
     fn parse_expression_statement(&mut self) -> Result<Statement, ParseError> {
@@ -190,7 +199,7 @@ impl<'a> Parser<'a> {
         let parameters = self.parse_function_parameters()?;
         self.expect_peek(Token::RParen)?;
         let body = self.parse_block_statement()?;
-        Ok(Expression::FunctionLiteral(parameters, body))
+        Ok(Expression::FunctionLiteral(parameters, body, None))
     }
 
     fn parse_array_literal(&mut self) -> Result<Expression, ParseError> {

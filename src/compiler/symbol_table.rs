@@ -7,9 +7,11 @@ pub enum SymbolScope {
     Local,
     BuiltIn,
     Free,
+    Function,
 }
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Symbol {
+    pub name: String,
     pub scope: SymbolScope,
     pub index: u16,
 }
@@ -31,9 +33,20 @@ impl SymbolStore {
         Default::default()
     }
 
+    pub fn define_function_name(&mut self, name: &String) -> &Symbol {
+        let symbol = Symbol {
+            name: name.to_owned(),
+            scope: SymbolScope::Function,
+            index: 0,
+        };
+        self.store.insert(name.clone(), symbol);
+        self.store.get(name).unwrap()
+    }
+
     pub fn define_free(&mut self, name: &String, original: &Symbol) -> &Symbol {
         self.free_symbols.push(original.clone());
         let symbol = Symbol {
+            name: name.to_owned(),
             scope: SymbolScope::Free,
             index: (self.free_symbols.len() - 1) as u16,
         };
@@ -55,14 +68,20 @@ impl SymbolStore {
             }
         };
 
-        self.store
-            .insert(name.clone(), Symbol { scope, index: idx });
+        self.store.insert(
+            name.clone(),
+            Symbol {
+                name: name.to_owned(),
+                scope,
+                index: idx,
+            },
+        );
         &self.store[name]
     }
 
     pub fn resolve(&self, name: &String) -> Result<Symbol, SymbolError> {
         match self.store.get(name) {
-            Some(value) => Ok(*value),
+            Some(value) => Ok(value.clone()),
             None => Err(SymbolError::NotFound),
         }
     }
@@ -93,6 +112,10 @@ impl SymbolTable {
 
     fn define_builtin(&mut self, name: &String, index: u16) -> &Symbol {
         self.stores[0].define_with_scope(name, SymbolScope::BuiltIn, Some(index))
+    }
+
+    pub fn define_function_name(&mut self, name: &String) -> &Symbol {
+        self.stores[self.store_index - 1].define_function_name(name)
     }
 
     pub fn num_definitions(&self) -> usize {
@@ -136,7 +159,7 @@ impl SymbolTable {
                 let mut free = sym;
                 for i in index + 1..current_index {
                     let store = &mut self.stores[i as usize];
-                    free = *store.define_free(name, &free);
+                    free = store.define_free(name, &free).clone();
                 }
                 return Ok(self.stores[current_index as usize]
                     .define_free(name, &free)
@@ -173,10 +196,12 @@ mod tests {
     fn define_test() {
         let expected = vec![
             Symbol {
+                name: "a".to_string(),
                 scope: SymbolScope::Global,
                 index: 0,
             },
             Symbol {
+                name: "b".to_string(),
                 scope: SymbolScope::Global,
                 index: 1,
             },
@@ -192,10 +217,12 @@ mod tests {
     fn resolve_global_test() {
         let expected = vec![
             Symbol {
+                name: "a".to_string(),
                 scope: SymbolScope::Global,
                 index: 0,
             },
             Symbol {
+                name: "b".to_string(),
                 scope: SymbolScope::Global,
                 index: 1,
             },
@@ -222,6 +249,7 @@ mod tests {
         assert_eq!(
             test,
             Symbol {
+                name: "a".to_string(),
                 scope: SymbolScope::Global,
                 index: 0,
             }
@@ -230,6 +258,7 @@ mod tests {
         assert_eq!(
             test,
             Symbol {
+                name: "b".to_string(),
                 scope: SymbolScope::Global,
                 index: 1,
             }
@@ -239,6 +268,7 @@ mod tests {
         assert_eq!(
             test,
             Symbol {
+                name: "c".to_string(),
                 scope: SymbolScope::Local,
                 index: 0,
             }
@@ -248,6 +278,7 @@ mod tests {
         assert_eq!(
             test,
             Symbol {
+                name: "d".to_string(),
                 scope: SymbolScope::Local,
                 index: 1,
             }
@@ -261,6 +292,7 @@ mod tests {
         assert_eq!(
             test,
             Symbol {
+                name: "a".to_string(),
                 scope: SymbolScope::Global,
                 index: 0,
             }
@@ -269,6 +301,7 @@ mod tests {
         assert_eq!(
             test,
             Symbol {
+                name: "b".to_string(),
                 scope: SymbolScope::Global,
                 index: 1,
             }
@@ -277,6 +310,7 @@ mod tests {
         assert_eq!(
             test,
             Symbol {
+                name: "c".to_string(),
                 scope: SymbolScope::Free,
                 index: 0,
             }
@@ -285,6 +319,7 @@ mod tests {
         assert_eq!(
             test,
             Symbol {
+                name: "d".to_string(),
                 scope: SymbolScope::Free,
                 index: 1,
             }
@@ -293,6 +328,7 @@ mod tests {
         assert_eq!(
             test,
             Symbol {
+                name: "e".to_string(),
                 scope: SymbolScope::Local,
                 index: 0,
             }
@@ -301,6 +337,7 @@ mod tests {
         assert_eq!(
             test,
             Symbol {
+                name: "f".to_string(),
                 scope: SymbolScope::Local,
                 index: 1,
             }

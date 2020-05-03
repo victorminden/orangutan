@@ -68,7 +68,7 @@ pub enum Expression {
     Prefix(Token, Box<Expression>),
     Infix(Box<Expression>, Token, Box<Expression>),
     If(Box<Expression>, BlockStatement, Option<BlockStatement>),
-    FunctionLiteral(Vec<String>, BlockStatement),
+    FunctionLiteral(Vec<String>, BlockStatement, Option<String>),
     Call(Box<Expression>, Vec<Expression>),
     ArrayLiteral(Vec<Expression>),
     Index(Box<Expression>, Box<Expression>),
@@ -93,7 +93,7 @@ impl fmt::Display for Expression {
                     write!(f, "if {} {}", condition, consequence)
                 }
             }
-            Expression::FunctionLiteral(parameters, body) => {
+            Expression::FunctionLiteral(parameters, body, _) => {
                 write!(f, "fn({}) {}", parameters.join(", "), body)
             }
             Expression::Call(function, arguments) => {

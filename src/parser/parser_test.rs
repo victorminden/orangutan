@@ -341,7 +341,7 @@ fn function_literal_statement_test() -> Result<(), ParseError> {
     assert_eq!(program.statements.len(), 1);
 
     if let Statement::Expression(expr) = &program.statements[0] {
-        if let Expression::FunctionLiteral(parameters, body) = expr {
+        if let Expression::FunctionLiteral(parameters, body, _) = expr {
             assert_eq!(parameters.join(", ").to_string(), "x, y");
             assert_eq!(body.to_string(), "{ return (x + y); }");
             Ok(())

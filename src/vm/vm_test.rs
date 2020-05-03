@@ -446,6 +446,21 @@ fn recursive_functions_test() {
             wrapper();",
             0,
         ),
+        (
+            "let fibonacci = fn(x) {
+            if (x == 0) {
+            return 0;
+            } else {
+            if (x == 1) {
+            return 1;
+            } else {
+            fibonacci(x - 1) + fibonacci(x - 2);
+            }
+            }
+            };
+            fibonacci(15);",
+            610,
+        ),
     ];
     for (test_input, expected) in tests {
         match run(test_input) {

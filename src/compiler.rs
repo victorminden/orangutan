@@ -103,6 +103,7 @@ impl Compiler {
             SymbolScope::Local => OpCode::GetLocal.make_u8(symbol.index as u8),
             SymbolScope::BuiltIn => OpCode::GetBuiltin.make_u8(symbol.index as u8),
             SymbolScope::Free => OpCode::GetFree.make_u8(symbol.index as u8),
+            SymbolScope::Function => OpCode::CurrentClosure.make(),
         }
     }
 
@@ -127,7 +128,7 @@ impl Compiler {
                 self.emit(OpCode::Pop.make());
             }
             Statement::Let(name, expr) => {
-                let symbol = *self.symbol_table.borrow_mut().define(name);
+                let symbol = self.symbol_table.borrow_mut().define(name).clone();
                 self.compile_expression(expr)?;
                 let insts = match symbol.scope {
                     SymbolScope::Global => OpCode::SetGlobal.make_u16(symbol.index),
@@ -153,8 +154,11 @@ impl Compiler {
                 }
                 self.emit(OpCode::Call.make_u8(args.len() as u8));
             }
-            Expression::FunctionLiteral(parameters, block_statement) => {
+            Expression::FunctionLiteral(parameters, block_statement, maybe_name) => {
                 self.enter_scope();
+                if let Some(name) = maybe_name {
+                    self.symbol_table.borrow_mut().define_function_name(name);
+                };
                 for parameter in parameters {
                     self.symbol_table.borrow_mut().define(parameter);
                 }

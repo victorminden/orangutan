@@ -171,7 +171,10 @@ impl Vm {
                 _ => return Err(VmError::BadOpCode),
             };
             match op {
-                OpCode::CurrentClosure => {}
+                OpCode::CurrentClosure => {
+                    let curr = self.current_frame().cl.clone();
+                    self.push(Rc::new(Object::Closure(curr)))?;
+                }
                 OpCode::GetFree => {
                     let free_idx = ins[ip + 1];
                     self.increment_ip(1);

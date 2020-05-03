@@ -84,7 +84,7 @@ fn eval_expression(e: &Expression, env: SharedEnvironment) -> Result<Object, Eva
             eval_if_expression(condition, consequence, alternative, env)
         }
         Expression::Ident(name) => eval_identifier(name, env),
-        Expression::FunctionLiteral(parameters, body) => Ok(Object::Function(
+        Expression::FunctionLiteral(parameters, body, _) => Ok(Object::Function(
             parameters.clone(),
             body.clone(),
             env.clone(),

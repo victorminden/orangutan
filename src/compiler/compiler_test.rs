@@ -901,7 +901,7 @@ fn recursive_test() {
                     OpCode::GetLocal.make_u8(0),
                     OpCode::Constant.make_u16(0),
                     OpCode::Sub.make(),
-                    OpCode::Call.make_u16(1),
+                    OpCode::Call.make_u8(1),
                     OpCode::ReturnValue.make(),
                 ],
                 1,
@@ -914,7 +914,7 @@ fn recursive_test() {
             OpCode::SetGlobal.make_u16(0),
             OpCode::GetGlobal.make_u16(0),
             OpCode::Constant.make_u16(2),
-            OpCode::Call.make_u16(1),
+            OpCode::Call.make_u8(1),
             OpCode::Pop.make(),
         ],
     }];
